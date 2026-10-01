@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Gestión de Estadías · Tu estadía, en un solo lugar</title>
+  <meta name="description" content="Plataforma para centralizar el proceso de estadías de la universidad: expediente digital, documentos, asesores, empresas, formularios, avisos y seguimiento.">
+  <meta name="color-scheme" content="light dark">
+
+  <!-- Aplicación web progresiva -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0f6e63" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#14201f" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Estadías">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+  <!-- Vista previa al compartir -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_MX">
+  <meta property="og:title" content="Plataforma de Gestión de Estadías">
+  <meta property="og:description" content="Expediente digital, documentos, asesores, empresas y seguimiento del proceso de estadías, en un solo lugar.">
+  <meta property="og:image" content="media/hero-plataforma.png">
+
+  <!-- Tipografías (si cambias esta URL, cámbiala también en sw.js) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" crossorigin href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&amp;display=swap">
+
+  <!-- Estilos: tokens → base → estructura → componentes → dispositivos -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <!-- Comportamiento (se ejecutan en orden al terminar de leer el HTML) -->
+  <script src="js/toast.js" defer></script>
+  <script src="js/navigation.js" defer></script>
+  <script src="js/pwa.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#contenido">Saltar al contenido</a>
+
+<!-- ================================================================
+     ENCABEZADO: identidad + acciones + menú de navegación
+     ================================================================ -->
+<header class="site-head">
+  <div class="wrap head-row">
+    <a class="brand" href="#inicio" aria-label="Gestión de Estadías, ir al inicio">
+      <span class="mark" aria-hidden="true">E</span>
+      <span class="brand-text">
+        <span class="brand-name">Gestión de Estadías</span>
+        <span class="brand-slogan">Tu estadía, en un solo lugar</span>
+      </span>
+    </a>
+
+    <div class="head-actions">
+      <!-- Aparece solo cuando el navegador permite instalar la app -->
+      <button class="head-btn install-btn" id="install-btn" type="button" title="Instalar como aplicación" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>
+        </svg>
+        <span class="btn-label">Instalar app</span>
+      </button>
+
+      <button class="head-btn menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="nav">
+        <span class="burger" aria-hidden="true"></span>
+        <span class="btn-label">Menú</span>
+      </button>
+    </div>
+
+    <nav class="nav" id="nav" aria-label="Secciones de la página">
+      <ul class="nav-list">
+        <li><a href="#inicio">Inicio</a></li>
+        <li><a href="#proceso">El proceso</a></li>
+        <li><a href="#roles">Roles</a></li>
+        <li><a href="#modulos">Módulos</a></li>
+        <li><a href="#flujo">Flujo</a></li>
+        <li><a href="#recorrido">Recorrido</a></li>
+        <li><a href="#plataforma">Plataforma</a></li>
+        <li><a href="#alcance">Alcance</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<!-- ================================================================
+     CUERPO
+     ================================================================ -->
+<main id="contenido">
+
+  <!-- ============ INICIO ============ -->
+  <section id="inicio" class="hero" aria-labelledby="titulo-inicio">
+    <div class="wrap">
+      <p class="eyebrow">Universidad · Proceso de estadías · Periodo sep–dic 2026</p>
+      <h1 id="titulo-inicio">La estadía completa, <em>en un solo lugar</em>.</h1>
+      <p class="tagline">Menos papel, menos filas, más seguimiento.</p>
+      <p class="lede">
+        Una plataforma donde el alumno arma su expediente y sube sus documentos, el asesor los
+        revisa y comenta, y el encargado de estadías administra alumnos, asesores, empresas y
+        periodos. La misma aplicación funciona en el navegador y como app Android.
+      </p>
+
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#recorrido">Ver el recorrido</a>
+        <a class="btn btn-ghost" href="#modulos">Qué incluye</a>
+      </div>
+
+      <figure class="hero-figure">
+        <img src="media/hero-plataforma.png" width="1600" height="1040"
+             fetchpriority="high" decoding="async"
+             alt="Panel del administrador en el navegador con indicadores y la tabla de alumnos asignados, junto a la vista del alumno en un teléfono con su avance y el estado de sus documentos.">
+        <figcaption>Vista del administrador en el navegador y vista del alumno en el teléfono, con los mismos datos.</figcaption>
+      </figure>
+
+      <div class="stat-strip">
+        <div class="stat"><b>3</b><span>roles: alumno, asesor y administrador</span></div>
+        <div class="stat"><b>2</b><span>niveles atendidos: TSU e Ingeniería</span></div>
+        <div class="stat"><b>1</b><span>periodo abierto a la vez</span></div>
+        <div class="stat"><b>4</b><span>estados posibles por documento</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EL PROCESO ============ -->
+  <section id="proceso" class="band" aria-labelledby="titulo-proceso">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">El problema</p>
+        <h2 id="titulo-proceso">Hoy el proceso vive en papel, en correos y en la ventanilla.</h2>
+        <p class="lede">
+          La documentación se entrega en físico, las copias se pierden, y saber qué falta o si
+          algo ya fue revisado depende de preguntar. La plataforma concentra esa información en
+          un solo sistema, con un estado visible para cada entrega.
+        </p>
+      </div>
+
+      <div class="compare">
+        <div class="panel now">
+          <h3>Cómo funciona hoy</h3>
+          <ul>
+            <li>Documentos físicos y copias que se traspapelan.</li>
+            <li>Entrega manual, con filas y horarios de ventanilla.</li>
+            <li>Seguimiento por distintos medios, sin un lugar único.</li>
+            <li>El alumno no sabe qué documento le falta.</li>
+            <li>El asesor no tiene a la mano el avance de su grupo.</li>
+            <li>La información queda repartida en registros sueltos.</li>
+          </ul>
+        </div>
+        <div class="panel next">
+          <h3>Con la plataforma</h3>
+          <ul>
+            <li>Expediente digital por alumno, siempre disponible.</li>
+            <li>Subida de archivos desde el teléfono, a cualquier hora.</li>
+            <li>Un estado claro por documento y por alumno.</li>
+            <li>Observaciones escritas del asesor en la misma pantalla.</li>
+            <li>Asignación de asesores individual o masiva.</li>
+            <li>Indicadores del periodo para el encargado de estadías.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ROLES ============ -->
+  <section id="roles" class="band alt" aria-labelledby="titulo-roles">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Quién la usa</p>
+        <h2 id="titulo-roles">Un solo sistema, tres miradas distintas.</h2>
+        <p class="lede">
+          Cada usuario entra con su cuenta institucional y el sistema lo lleva al panel que le
+          corresponde. El administrador también puede actuar como asesor cuando hace falta.
+        </p>
+      </div>
+
+      <div class="cards">
+        <article class="card">
+          <span class="tag">Rol 1</span>
+          <h3>Alumno</h3>
+          <p class="who">Quien realiza su estadía.</p>
+          <ul>
+            <li>Completa su expediente y su cédula de datos.</li>
+            <li>Sube documentos y consulta su estado.</li>
+            <li>Corrige lo que el asesor rechazó.</li>
+            <li>Acepta al asesor que le fue asignado.</li>
+            <li>Consulta su empresa, su asesor y los avisos.</li>
+            <li>Llena los formularios del proceso.</li>
+            <li>Ve su avance general y lo que le falta.</li>
+          </ul>
+          <p class="device">Prioridad: móvil · Android y navegador</p>
+        </article>
+
+        <article class="card">
+          <span class="tag">Rol 2</span>
+          <h3>Asesor interno</h3>
+          <p class="who">Acompaña y revisa a los alumnos asignados.</p>
+          <ul>
+            <li>Consulta su lista de estudiantes y sus expedientes.</li>
+            <li>Revisa cada documento entregado.</li>
+            <li>Aprueba o marca que requiere corrección.</li>
+            <li>Escribe observaciones para el alumno.</li>
+            <li>Sigue el avance de todo su grupo.</li>
+            <li>Publica avisos según sus permisos.</li>
+            <li>Registra las sesiones de acompañamiento de tesina.</li>
+          </ul>
+          <p class="device">Prioridad: escritorio · también en móvil</p>
+        </article>
+
+        <article class="card">
+          <span class="tag">Rol 3</span>
+          <h3>Administrador</h3>
+          <p class="who">Encargado de estadías.</p>
+          <ul>
+            <li>Gestiona alumnos, asesores y periodos.</li>
+            <li>Administra empresas y sus contactos.</li>
+            <li>Asigna asesores de forma individual o masiva.</li>
+            <li>Consulta expedientes y documentación.</li>
+            <li>Publica avisos por periodo o por grupo.</li>
+            <li>Revisa indicadores del proceso.</li>
+            <li>Consulta periodos anteriores como referencia.</li>
+          </ul>
+          <p class="device">Prioridad: escritorio</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MÓDULOS ============ -->
+  <section id="modulos" class="band" aria-labelledby="titulo-modulos">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Qué incluye</p>
+        <h2 id="titulo-modulos">Los módulos del sistema.</h2>
+        <p class="lede">
+          Todo lo que hoy está repartido entre carpetas, listas y correos queda dentro de la
+          misma plataforma.
+        </p>
+      </div>
+
+      <div class="modules">
+        <article class="module">
+          <h3>Autenticación</h3>
+          <p>Ingreso con la cuenta institucional, cambio de contraseña inicial y cierre de sesión por inactividad.</p>
+        </article>
+        <article class="module">
+          <h3>Alumnos</h3>
+          <p>Matrícula, datos académicos, nivel, contacto, estado, periodo y asesor asignado.</p>
+        </article>
+        <article class="module">
+          <h3>Expediente digital</h3>
+          <p>Cédula del estudiante: domicilio, teléfono, tipo sanguíneo, alergias, contacto de emergencia y parentesco.</p>
+        </article>
+        <article class="module">
+          <h3>Documentos</h3>
+          <p>Seguro facultativo, comprobante de pago o beca, cartilla, cartas, INE del estudiante y del tutor, y carta responsiva.</p>
+        </article>
+        <article class="module">
+          <h3>Revisión y aprobación</h3>
+          <p>El asesor aprueba o marca corrección y deja observaciones; lo aprobado queda protegido.</p>
+        </article>
+        <article class="module">
+          <h3>Asesores</h3>
+          <p>Asignación individual o masiva, consulta de alumnos por asesor y aceptación por parte del alumno.</p>
+        </article>
+        <article class="module">
+          <h3>Empresas y contactos</h3>
+          <p>Catálogo administrado por la universidad, con convenio cuando aplica y un contacto principal.</p>
+        </article>
+        <article class="module">
+          <h3>Formularios</h3>
+          <p>Consulta, captura, guardado y envío de los formularios del proceso, con su estado visible.</p>
+        </article>
+        <article class="module">
+          <h3>Avisos</h3>
+          <p>Fechas, recordatorios y requisitos dirigidos a un periodo o a un grupo de alumnos.</p>
+        </article>
+        <article class="module">
+          <h3>Periodos y niveles</h3>
+          <p>Un periodo abierto a la vez, con TSU e Ingeniería diferenciados dentro del mismo sistema.</p>
+        </article>
+        <article class="module">
+          <h3>Seguimiento</h3>
+          <p>Antes de iniciar, en proceso, en finalización y completada: el avance es visible para todos los roles.</p>
+        </article>
+        <article class="module">
+          <h3>Tesina</h3>
+          <p>El alumno sube su avance, el asesor lo revisa y devuelve observaciones; las sesiones se agendan y se consultan.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FLUJO ============ -->
+  <section id="flujo" class="band alt" aria-labelledby="titulo-flujo">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Cómo funciona</p>
+        <h2 id="titulo-flujo">El ciclo de un documento, de principio a fin.</h2>
+        <p class="lede">
+          Es el mismo camino para cada entrega del expediente, y las dos partes ven el mismo
+          estado en todo momento.
+        </p>
+      </div>
+
+      <ol class="flow">
+        <li class="step">
+          <span class="n" aria-hidden="true">01</span>
+          <h3>El alumno sube</h3>
+          <p>Elige el documento requerido, adjunta el archivo y lo envía. El archivo se nombra con su matrícula y el tipo de documento.</p>
+        </li>
+        <li class="step">
+          <span class="n" aria-hidden="true">02</span>
+          <h3>El asesor revisa</h3>
+          <p>Abre la entrega, la revisa y decide: aprobarla o marcar que requiere corrección, con sus observaciones escritas.</p>
+        </li>
+        <li class="step">
+          <span class="n" aria-hidden="true">03</span>
+          <h3>El alumno corrige</h3>
+          <p>Si fue rechazada, lee las observaciones y envía una nueva versión. Lo aprobado ya no se puede modificar ni borrar libremente.</p>
+        </li>
+        <li class="step">
+          <span class="n" aria-hidden="true">04</span>
+          <h3>El avance sube</h3>
+          <p>Cada aprobación mueve el porcentaje del expediente, que el alumno, el asesor y el administrador ven al instante.</p>
+        </li>
+      </ol>
+
+      <ul class="states" aria-label="Estados posibles de un documento">
+        <li class="label" aria-hidden="true">Estados</li>
+        <li class="pill pen">Pendiente</li>
+        <li class="pill rev">En revisión</li>
+        <li class="pill ok">Aprobado</li>
+        <li class="pill fix">Requiere corrección</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ RECORRIDO (VIDEO) ============ -->
+  <section id="recorrido" class="band" aria-labelledby="titulo-recorrido">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Recorrido</p>
+        <h2 id="titulo-recorrido">El flujo completo, en video.</h2>
+        <p class="lede">
+          En unos diecisiete segundos: el alumno sube su seguro facultativo desde el teléfono,
+          el asesor lo aprueba desde el navegador y el avance se actualiza para los dos.
+        </p>
+      </div>
+
+      <div class="video-wrap">
+        <video controls playsinline preload="metadata" poster="media/poster-recorrido.png"
+               width="1280" height="720"
+               aria-label="Recorrido: el alumno sube un documento, el asesor lo aprueba y el avance se actualiza">
+          <source src="media/recorrido-estadias.mp4" type="video/mp4">
+          Tu navegador no puede reproducir el video.
+          <a href="media/recorrido-estadias.mp4">Descárgalo aquí</a>.
+        </video>
+      </div>
+
+      <ol class="video-notes">
+        <li><b>Paso 1 · Alumno</b>Sube el archivo y la entrega pasa a «En revisión».</li>
+        <li><b>Paso 2 · Asesor</b>Revisa, comenta si hace falta y aprueba.</li>
+        <li><b>Paso 3 · Todos</b>El avance del alumno se actualiza para los tres roles.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ PLATAFORMA ============ -->
+  <section id="plataforma" class="band alt" aria-labelledby="titulo-plataforma">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">La plataforma</p>
+        <h2 id="titulo-plataforma">Una sola base de código, dos formas de entrar.</h2>
+        <p class="lede">
+          No son dos productos distintos. La interfaz se diseña para pantallas pequeñas desde el
+          principio y la misma aplicación se empaqueta como app Android con Capacitor.
+        </p>
+      </div>
+
+      <div class="split">
+        <div>
+          <h3 class="sub-title">Arquitectura</h3>
+          <div class="stack">
+            <div class="layer">
+              <b>Usuarios</b>
+              <span>Alumno · Asesor · Administrador</span>
+            </div>
+            <div class="conn" aria-hidden="true"></div>
+            <div class="layer">
+              <b>Frontend React + shadcn/ui</b>
+              <span>Responsivo, pensado primero para móvil</span>
+            </div>
+            <div class="conn" aria-hidden="true"></div>
+            <div class="layer-row">
+              <div class="layer"><b>Navegador</b><span>Escritorio y móvil</span></div>
+              <div class="layer"><b>Capacitor</b><span>App Android</span></div>
+            </div>
+            <div class="conn" aria-hidden="true"></div>
+            <div class="layer">
+              <b>API REST en Kotlin</b>
+              <span>Autenticación, reglas del proceso y archivos</span>
+            </div>
+            <div class="conn" aria-hidden="true"></div>
+            <div class="layer">
+              <b>MySQL / MariaDB</b>
+              <span>Alumnos, expedientes, empresas y periodos</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="sub-title">Tecnologías</h3>
+          <ul class="specs">
+            <li><span class="k">Frontend</span><span class="v">React con shadcn/ui, diseño responsivo</span></li>
+            <li><span class="k">Móvil</span><span class="v">Capacitor, Android Studio y Android SDK</span></li>
+            <li><span class="k">Distribución</span><span class="v">Paquete Android publicable en Google Play</span></li>
+            <li><span class="k">Backend</span><span class="v">API REST en Kotlin</span></li>
+            <li><span class="k">Base de datos</span><span class="v">MySQL o MariaDB</span></li>
+            <li><span class="k">Versiones</span><span class="v">Git y GitHub</span></li>
+            <li><span class="k">Integración</span><span class="v">Con los sistemas PHP existentes, solo donde sea necesario</span></li>
+          </ul>
+
+          <h3 class="sub-title">Quién construye qué</h3>
+          <ul class="specs">
+            <li><span class="k">Alexia</span><span class="v">React, interfaces, diseño responsivo, integración con la API, Capacitor y Android</span></li>
+            <li><span class="k">Danna</span><span class="v">Kotlin, API REST, base de datos, autenticación, archivos y seguridad</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ALCANCE ============ -->
+  <section id="alcance" class="band" aria-labelledby="titulo-alcance">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Alcance</p>
+        <h2 id="titulo-alcance">Primero el flujo completo, después lo demás.</h2>
+        <p class="lede">
+          El MVP se concentra en que el proceso funcione de extremo a extremo para los tres
+          roles, antes de sumar funciones avanzadas.
+        </p>
+      </div>
+
+      <div class="compare">
+        <div class="panel next">
+          <h3>Dentro del MVP</h3>
+          <ul>
+            <li>Ingreso, usuarios y roles.</li>
+            <li>Alumnos, periodos y expediente digital.</li>
+            <li>Documentos: subida, revisión, aprobación y comentarios.</li>
+            <li>Asesores y asignación.</li>
+            <li>Empresas y contactos.</li>
+            <li>Formularios y avisos.</li>
+            <li>Seguimiento y paneles básicos por rol.</li>
+            <li>Aplicación Android publicada.</li>
+          </ul>
+        </div>
+        <div class="panel now">
+          <h3>Fuera del MVP</h3>
+          <ul>
+            <li>Portal y cuentas para empresas.</li>
+            <li>Bolsa de trabajo y postulación a varias empresas.</li>
+            <li>Chat y videollamadas.</li>
+            <li>Editor colaborativo de documentos.</li>
+            <li>Constructor avanzado de formularios.</li>
+            <li>Firma electrónica avanzada.</li>
+            <li>Analítica avanzada.</li>
+            <li>Una app móvil independiente de la web.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 class="sub-title stages-title">Etapas de desarrollo</h3>
+      <ol class="timeline">
+        <li><time datetime="2026-10-01">1–3 oct</time><span>Arquitectura y configuración del proyecto.</span></li>
+        <li><time datetime="2026-10-06">6–10 oct</time><span>Autenticación, usuarios y roles.</span></li>
+        <li><time datetime="2026-10-13">13–17 oct</time><span>Alumnos y expediente digital.</span></li>
+        <li><time datetime="2026-10-20">20–24 oct</time><span>Documentos y revisión.</span></li>
+        <li><time datetime="2026-10-27">27–31 oct</time><span>Empresas, asesores y formularios.</span></li>
+        <li><time datetime="2026-11-03">3–5 nov</time><span>Administración, avisos y seguimiento.</span></li>
+        <li><time datetime="2026-11-06">6–9 nov</time><span>Integración y pruebas intensivas.</span></li>
+        <li><time datetime="2026-11-10">10–15 nov</time><span>Correcciones, compilación final y publicación.</span></li>
+      </ol>
+      <p class="note">
+        La app Android empieza a probarse antes de noviembre por el periodo de prueba cerrada
+        que puede pedir Google Play.
+      </p>
+    </div>
+  </section>
+</main>
+
+<!-- ================================================================
+     PIE DE PÁGINA
+     ================================================================ -->
+<footer class="site-foot" id="contacto">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="brand">
+          <span class="mark" aria-hidden="true">E</span>
+          <span class="brand-text">
+            <span class="brand-name">Gestión de Estadías</span>
+            <span class="brand-slogan">Tu estadía, en un solo lugar</span>
+          </span>
+        </div>
+        <p class="foot-about">Plataforma para centralizar el proceso de estadías de la universidad: expediente, documentos, asesores, empresas y seguimiento.</p>
+      </div>
+
+      <nav aria-labelledby="pie-secciones">
+        <h2 class="foot-title" id="pie-secciones">Secciones</h2>
+        <ul class="foot-links">
+          <li><a href="#inicio">Inicio</a></li>
+          <li><a href="#proceso">El proceso</a></li>
+          <li><a href="#roles">Roles</a></li>
+          <li><a href="#modulos">Módulos</a></li>
+          <li><a href="#flujo">Flujo</a></li>
+        </ul>
+      </nav>
+
+      <nav aria-labelledby="pie-mas">
+        <h2 class="foot-title" id="pie-mas">Más</h2>
+        <ul class="foot-links">
+          <li><a href="#recorrido">Recorrido en video</a></li>
+          <li><a href="#plataforma">Plataforma y tecnologías</a></li>
+          <li><a href="#alcance">Alcance y etapas</a></li>
+        </ul>
+      </nav>
+
+      <div>
+        <h2 class="foot-title">Redes sociales</h2>
+        <div class="social">
+          <a href="#contacto" aria-label="Facebook" title="Facebook">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 9h3V6h-3c-2.2 0-4 1.8-4 4v2H8v3h2v7h3v-7h3l1-3h-4v-2c0-.6.4-1 1-1z"/></svg>
+          </a>
+          <a href="#contacto" aria-label="Instagram" title="Instagram">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.3 1 .4 2.2.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .3-2.2.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.3-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.3 2.2-.4C8.4 2.2 8.8 2.2 12 2.2zm0 3.4A6.4 6.4 0 1 0 18.4 12 6.4 6.4 0 0 0 12 5.6zm0 2.2A4.2 4.2 0 1 1 7.8 12 4.2 4.2 0 0 1 12 7.8zm6.6-3.9a1.5 1.5 0 1 0 1.5 1.5 1.5 1.5 0 0 0-1.5-1.5z"/></svg>
+          </a>
+          <a href="#contacto" aria-label="X" title="X">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 3h3l-6.6 7.6L21.8 21h-6l-4.7-6.1L5.7 21h-3l7.1-8.1L2.5 3h6.2l4.2 5.6L17.5 3zm-1 16h1.7L8.6 4.7H6.8L16.5 19z"/></svg>
+          </a>
+          <a href="#contacto" aria-label="YouTube" title="YouTube">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12s0-3.2-.4-4.7a2.5 2.5 0 0 0-1.7-1.8C18.3 5 12 5 12 5s-6.3 0-7.9.5a2.5 2.5 0 0 0-1.7 1.8C2 8.8 2 12 2 12s0 3.2.4 4.7a2.5 2.5 0 0 0 1.7 1.8C5.7 19 12 19 12 19s6.3 0 7.9-.5a2.5 2.5 0 0 0 1.7-1.8C22 15.2 22 12 22 12zm-12 3V9l5.2 3z"/></svg>
+          </a>
+          <a href="#contacto" aria-label="LinkedIn" title="LinkedIn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.9 8.5v11H3.4v-11h3.5zM5.2 3a2 2 0 1 1 0 4.1 2 2 0 0 1 0-4.1zM20.6 19.5h-3.5v-5.7c0-1.4-.5-2.3-1.7-2.3-.9 0-1.5.6-1.7 1.2-.1.2-.1.6-.1.9v5.9H10s.1-10 0-11h3.5v1.6a3.5 3.5 0 0 1 3.1-1.7c2.3 0 4 1.5 4 4.7v6.4z"/></svg>
+          </a>
+        </div>
+        <p class="foot-note">Perfiles de ejemplo para esta maqueta informativa.</p>
+      </div>
+    </div>
+
+    <div class="foot-bottom">
+      <span>© 2026 Plataforma de Gestión de Estadías. Todos los derechos reservados.</span>
+      <span>Proyecto académico · Alexia y Danna</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Zona de avisos emergentes (la llena js/toast.js) -->
+<div class="toast-region" id="toast-region" role="status" aria-live="polite"></div>
+</body>
+</html>

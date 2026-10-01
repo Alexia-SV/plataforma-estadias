@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="marca" x1="0.16" y1="-0.09" x2="0.84" y2="1.09">
+      <stop offset="0" stop-color="#0f6e63"/>
+      <stop offset="1" stop-color="#0a544c"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#marca)"/>
+  <text x="32" y="46.5" text-anchor="middle" fill="#fff"
+        font-family="Georgia, 'Times New Roman', serif" font-size="41">E</text>
+</svg>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sin conexión · Gestión de Estadías</title>
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#0f6e63">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+
+  <!-- Misma URL que en index.html: el service worker ya la tiene guardada -->
+  <link rel="stylesheet" crossorigin href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&amp;display=swap">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<!-- Página que muestra el service worker cuando no hay conexión
+     y la ruta pedida no está guardada. -->
+<header class="site-head">
+  <div class="wrap head-row">
+    <a class="brand" href="./">
+      <span class="mark" aria-hidden="true">E</span>
+      <span class="brand-text">
+        <span class="brand-name">Gestión de Estadías</span>
+        <span class="brand-slogan">Tu estadía, en un solo lugar</span>
+      </span>
+    </a>
+  </div>
+</header>
+
+<main class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Sin conexión</p>
+    <h1>Esta página no está <em>guardada</em>.</h1>
+    <p class="lede">
+      No hay conexión a internet y la dirección que abriste no se guardó para usarse sin red.
+      La portada sí está disponible: desde ahí puedes consultar todas las secciones.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="./">Ir a la portada</a>
+    </div>
+  </div>
+</main>
+</body>
+</html>

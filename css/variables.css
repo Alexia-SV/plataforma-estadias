@@ -1,0 +1,159 @@
+/* ==========================================================================
+   variables.css — Tokens de diseño
+   --------------------------------------------------------------------------
+   Toda la paleta, la tipografía, los radios y las sombras salen de aquí.
+   Ningún otro archivo escribe colores directamente: así el sitio conserva
+   una paleta consistente en modo claro y en modo oscuro.
+
+   Puntos de corte (se aplican en responsive.css; las variables CSS no
+   funcionan dentro de @media, por eso solo se documentan aquí):
+     Teléfonos    < 768 px   → estilos base (mobile first)
+     Tabletas     ≥ 768 px
+     Laptops      ≥ 1024 px
+     Escritorio   ≥ 1280 px
+   ========================================================================== */
+
+:root {
+  /* ---------- Identidad (no cambia con el tema) ---------- */
+  --brand: #0f6e63;
+  --brand-deep: #0a544c;
+  --on-brand: #ffffff;
+
+  /* ---------- Texto ---------- */
+  --ink: #16302f;          /* títulos y texto principal */
+  --ink-2: #2e4a47;        /* texto de listas y tarjetas */
+  --muted: #5c6b68;        /* texto secundario */
+  --faint: #61726d;        /* etiquetas y pies de foto (contraste AA) */
+
+  /* ---------- Acento ---------- */
+  --accent: #0f6e63;
+  --accent-deep: #0a544c;
+  --accent-soft: #e2efeb;
+  --on-accent: #ffffff;
+
+  /* ---------- Superficies y líneas ---------- */
+  --page: #f7f9f7;
+  --surface: #ffffff;
+  --surface-2: #f2f6f3;
+  --line: #e2e8e5;
+  --line-strong: #cfdad5;
+  --sage: #cfe3da;
+  --peri: #dce4f2;
+
+  /* ---------- Estados de un documento ---------- */
+  --ok-bg: #dcebe1;   --ok-fg: #2f6b4c;    /* Aprobado */
+  --rev-bg: #faecd2;  --rev-fg: #8a5e12;   /* En revisión */
+  --fix-bg: #f7dedb;  --fix-fg: #9e4231;   /* Requiere corrección */
+  --pen-bg: #e6eae8;  --pen-fg: #56655f;   /* Pendiente */
+
+  /* ---------- Superficie invertida (avisos emergentes) ---------- */
+  --inverse-bg: #16302f;
+  --inverse-ink: #eef4f1;
+  --inverse-accent: #8bdccd;
+
+  /* ---------- Pie de página (siempre oscuro) ---------- */
+  --foot-bg: #112625;
+  --foot-ink: #dfe9e5;
+  --foot-strong: #ffffff;
+  --foot-muted: #a9c0ba;
+  --foot-faint: #8fa8a2;
+  --foot-accent: #7fc7b8;
+  --foot-chip: rgba(255, 255, 255, .07);
+  --foot-chip-hover: rgba(255, 255, 255, .16);
+  --foot-line: rgba(255, 255, 255, .12);
+
+  /* ---------- Sombras ---------- */
+  --shadow: 0 1px 2px rgba(18, 44, 42, .05), 0 12px 30px -18px rgba(18, 44, 42, .28);
+  --shadow-lg: 0 2px 4px rgba(18, 44, 42, .05), 0 30px 60px -30px rgba(18, 44, 42, .38);
+
+  /* ---------- Tipografía ---------- */
+  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+
+  --fs-h1: clamp(38px, 6.6vw, 70px);
+  --fs-h2: clamp(30px, 4.4vw, 44px);
+  --fs-lede: clamp(17px, 2vw, 19px);
+  --fs-tagline: clamp(20px, 2.8vw, 26px);
+
+  /* ---------- Espaciado y forma ---------- */
+  --max-width: 1140px;
+  --gutter: clamp(16px, 4vw, 40px);
+  --header-h: 64px;
+  --band-pad: clamp(56px, 8vw, 104px);
+  --radius: 14px;
+  --radius-lg: 18px;
+  --pill: 999px;
+}
+
+/* ---------- Modo oscuro: sigue la preferencia del sistema ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #e8efec;
+    --ink-2: #cdd9d5;
+    --muted: #9aaea8;
+    --faint: #8a9c97;
+
+    --accent: #63c6b5;
+    --accent-deep: #8bdccd;
+    --accent-soft: #14302c;
+    --on-accent: #0d1514;
+
+    --page: #0d1514;
+    --surface: #14201f;
+    --surface-2: #182726;
+    --line: #25352f;
+    --line-strong: #32453f;
+    --sage: #1d3b36;
+    --peri: #1f2c3c;
+
+    --ok-bg: #16311f;   --ok-fg: #8fd5a8;
+    --rev-bg: #33270f;  --rev-fg: #e9c078;
+    --fix-bg: #37201b;  --fix-fg: #eda595;
+    --pen-bg: #20302d;  --pen-fg: #9aaea8;
+
+    --inverse-bg: #e8efec;
+    --inverse-ink: #10201e;
+    --inverse-accent: #0a544c;
+
+    --foot-bg: #081110;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 30px -18px rgba(0, 0, 0, .7);
+    --shadow-lg: 0 2px 4px rgba(0, 0, 0, .4), 0 30px 60px -30px rgba(0, 0, 0, .8);
+  }
+}
+
+/* ---------- Modo oscuro forzado (data-theme="dark" en <html>) ---------- */
+:root[data-theme="dark"] {
+  --ink: #e8efec;
+  --ink-2: #cdd9d5;
+  --muted: #9aaea8;
+  --faint: #8a9c97;
+
+  --accent: #63c6b5;
+  --accent-deep: #8bdccd;
+  --accent-soft: #14302c;
+  --on-accent: #0d1514;
+
+  --page: #0d1514;
+  --surface: #14201f;
+  --surface-2: #182726;
+  --line: #25352f;
+  --line-strong: #32453f;
+  --sage: #1d3b36;
+  --peri: #1f2c3c;
+
+  --ok-bg: #16311f;   --ok-fg: #8fd5a8;
+  --rev-bg: #33270f;  --rev-fg: #e9c078;
+  --fix-bg: #37201b;  --fix-fg: #eda595;
+  --pen-bg: #20302d;  --pen-fg: #9aaea8;
+
+  --inverse-bg: #e8efec;
+  --inverse-ink: #10201e;
+  --inverse-accent: #0a544c;
+
+  --foot-bg: #081110;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 30px -18px rgba(0, 0, 0, .7);
+  --shadow-lg: 0 2px 4px rgba(0, 0, 0, .4), 0 30px 60px -30px rgba(0, 0, 0, .8);
+}

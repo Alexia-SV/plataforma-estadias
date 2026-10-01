@@ -1,0 +1,8 @@
+# Configuración local del editor y de Claude Code (no forma parte del sitio)
+.claude/
+.vscode/
+
+# Archivos del sistema
+Thumbs.db
+desktop.ini
+.DS_Store

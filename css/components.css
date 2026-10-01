@@ -1,0 +1,619 @@
+/* ==========================================================================
+   components.css — Componentes reutilizables de la interfaz
+   Estilos base para teléfono; las columnas por dispositivo se definen en
+   responsive.css.
+
+   Índice
+     1. Botones
+     2. Portada (hero) e imagen principal
+     3. Franja de cifras
+     4. Paneles de comparación
+     5. Tarjetas de roles
+     6. Módulos
+     7. Flujo y estados
+     8. Video
+     9. Arquitectura y especificaciones
+    10. Línea de tiempo
+    11. Aviso emergente (toast)
+   ========================================================================== */
+
+/* ---------- 1. Botones ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 22px;
+  border: 1px solid transparent;
+  border-radius: var(--pill);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s, background .15s, border-color .15s, color .15s;
+}
+
+.btn-primary {
+  background: var(--accent-deep);
+  color: var(--on-accent);
+  box-shadow: var(--shadow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-ghost {
+  background: var(--surface);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent-deep);
+}
+
+/* ---------- 2. Portada (hero) ---------- */
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding-block: clamp(40px, 7vw, 86px) clamp(30px, 5vw, 56px);
+}
+
+/* Halo de color decorativo detrás del título */
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: auto -10% 32% 55%;
+  z-index: -1;
+  height: 520px;
+  background: radial-gradient(closest-side, var(--peri), transparent 72%);
+  opacity: .7;
+  pointer-events: none;
+}
+
+.hero h1 {
+  max-width: 16ch;
+  margin-bottom: 20px;
+  font-family: var(--serif);
+  font-size: var(--fs-h1);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -.018em;
+}
+
+.hero h1 em {
+  font-style: italic;
+  color: var(--accent-deep);
+}
+
+.tagline {
+  margin: 0 0 18px;
+  font-family: var(--serif);
+  font-size: var(--fs-tagline);
+  font-style: italic;
+  color: var(--accent-deep);
+}
+
+.hero .lede {
+  max-width: 58ch;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.hero-figure {
+  margin: clamp(34px, 5vw, 56px) 0 0;
+}
+
+.hero-figure img {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+
+figcaption {
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .02em;
+  color: var(--faint);
+}
+
+/* ---------- 3. Franja de cifras ---------- */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  margin: clamp(34px, 5vw, 52px) 0 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--line);
+}
+
+.stat {
+  padding: 18px;
+  background: var(--surface);
+}
+
+.stat b {
+  display: block;
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--accent-deep);
+}
+
+.stat span {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+/* ---------- 4. Paneles de comparación ---------- */
+.compare {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.panel {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.panel.now {
+  border-style: dashed;
+  background: transparent;
+}
+
+.panel h3 {
+  margin-bottom: 18px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.panel.next h3 {
+  color: var(--accent);
+}
+
+.panel ul {
+  display: grid;
+  gap: 13px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  font-size: 15.5px;
+  color: var(--ink-2);
+}
+
+.panel li::before {
+  content: "—";
+  font-family: var(--mono);
+  color: var(--faint);
+}
+
+.panel.next li::before {
+  content: "✓";
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* ---------- 5. Tarjetas de roles ---------- */
+.cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  padding: 26px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.card .tag {
+  margin-bottom: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.card h3 {
+  margin-bottom: 6px;
+  font-family: var(--serif);
+  font-size: 25px;
+  font-weight: 400;
+}
+
+.card .who {
+  margin: 0 0 18px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.card ul {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 22px;
+  padding: 0;
+  list-style: none;
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+.card li {
+  position: relative;
+  padding-left: 18px;
+}
+
+.card li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: .62em;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--sage);
+}
+
+.card .device {
+  margin: auto 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* ---------- 6. Módulos ---------- */
+.modules {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--line);
+}
+
+.module {
+  padding: 22px;
+  background: var(--surface);
+}
+
+.module h3 {
+  margin-bottom: 6px;
+  font-size: 16.5px;
+}
+
+.module p {
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--muted);
+}
+
+/* ---------- 7. Flujo de un documento y estados ---------- */
+.flow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  padding-top: 22px;
+  border-top: 2px solid var(--accent);
+}
+
+.step .n {
+  display: block;
+  margin-bottom: 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .12em;
+  color: var(--accent);
+}
+
+.step h3 {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.step p {
+  margin: 0;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.states {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 34px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.states .label {
+  margin-right: 4px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.pill {
+  padding: 6px 13px;
+  border-radius: var(--pill);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pill.pen { background: var(--pen-bg); color: var(--pen-fg); }
+.pill.rev { background: var(--rev-bg); color: var(--rev-fg); }
+.pill.ok  { background: var(--ok-bg);  color: var(--ok-fg); }
+.pill.fix { background: var(--fix-bg); color: var(--fix-fg); }
+
+/* ---------- 8. Video ---------- */
+.video-wrap {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.video-wrap video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--surface-2);
+}
+
+.video-notes {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin: 26px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.video-notes li {
+  font-size: 14.5px;
+  color: var(--muted);
+}
+
+.video-notes b {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+/* ---------- 9. Arquitectura y especificaciones ---------- */
+.split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(36px, 4vw, 48px);
+  align-items: start;
+}
+
+.stack {
+  display: grid;
+}
+
+.layer {
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.layer b {
+  display: block;
+  font-size: 15px;
+}
+
+.layer span {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+/* Capa dividida en dos (Navegador | Capacitor) */
+.layer-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* Conector vertical entre capas */
+.conn {
+  width: 2px;
+  height: 26px;
+  margin-inline: auto;
+  background: var(--line-strong);
+}
+
+.specs {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.specs li {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  align-items: baseline;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 15px;
+}
+
+.specs li:first-child {
+  border-top: 1px solid var(--line);
+}
+
+.specs .k {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.specs .v {
+  color: var(--ink-2);
+}
+
+.specs + .sub-title {
+  margin-top: 34px;
+}
+
+/* ---------- 10. Línea de tiempo ---------- */
+.stages-title {
+  margin: clamp(38px, 5vw, 56px) 0 0;
+  font-size: 24px;
+}
+
+.timeline {
+  display: grid;
+  margin: 26px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline li {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  align-items: baseline;
+  padding: 15px 0;
+  border-top: 1px solid var(--line);
+}
+
+.timeline li:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.timeline time {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: .04em;
+  color: var(--accent);
+}
+
+.timeline span {
+  font-size: 15.5px;
+  color: var(--ink-2);
+}
+
+/* ---------- 11. Aviso emergente (toast) ---------- */
+.toast-region {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 80;
+  width: min(440px, calc(100% - 2 * var(--gutter)));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 12px 10px 12px 18px;
+  border-radius: var(--radius);
+  background: var(--inverse-bg);
+  color: var(--inverse-ink);
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  animation: toast-in .25s ease-out;
+}
+
+.toast.is-leaving {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .2s, transform .2s;
+}
+
+.toast-msg {
+  flex: 1;
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+
+.toast-action,
+.toast-close {
+  flex: none;
+  min-height: 36px;
+  border: 0;
+  border-radius: var(--pill);
+  background: transparent;
+  cursor: pointer;
+}
+
+.toast-action {
+  padding: 0 12px;
+  color: var(--inverse-accent);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.toast-close {
+  width: 36px;
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+  opacity: .7;
+}
+
+.toast-action:hover,
+.toast-close:hover {
+  background: rgba(127, 127, 127, .18);
+  opacity: 1;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}

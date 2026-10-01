@@ -1,0 +1,343 @@
+/* ==========================================================================
+   layout.css — Estructura de la página
+   Encabezado · Menú de navegación · Secciones del cuerpo · Pie de página
+   Estilos base para teléfono; los ajustes por dispositivo están en
+   responsive.css.
+   ========================================================================== */
+
+/* ==========================================================================
+   1. Encabezado
+   ========================================================================== */
+.site-head {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: var(--page);
+  background: color-mix(in srgb, var(--page) 88%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+
+.head-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--header-h);
+}
+
+/* ---------- Identidad: logotipo + nombre + lema ---------- */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin-right: auto;
+  color: inherit;
+  text-decoration: none;
+}
+
+.mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: linear-gradient(150deg, var(--brand) 0%, var(--brand-deep) 100%);
+  color: var(--on-brand);
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 500;
+  box-shadow: var(--shadow);
+}
+
+.brand-text {
+  display: grid;
+  line-height: 1.15;
+}
+
+.brand-name {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: .1px;
+  white-space: nowrap;
+}
+
+.brand-slogan {
+  display: none; /* se muestra en pantallas medianas y grandes */
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* ---------- Botones del encabezado (Instalar y Menú) ---------- */
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.head-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--pill);
+  background: var(--surface);
+  color: var(--ink);
+  font: 600 13px/1 var(--sans);
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+
+.head-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-deep);
+}
+
+.head-btn svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.install-btn {
+  border-color: transparent;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+}
+
+/* En teléfono los botones solo muestran el ícono; el texto sigue
+   disponible para lectores de pantalla. */
+.head-btn .btn-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Ícono de hamburguesa que se convierte en X al abrir el menú */
+.burger {
+  position: relative;
+  display: block;
+  width: 16px;
+  height: 1.5px;
+  background: currentColor;
+  transition: background .15s;
+}
+
+.burger::before,
+.burger::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 16px;
+  height: 1.5px;
+  background: currentColor;
+  transition: transform .2s;
+}
+
+.burger::before { transform: translateY(-5px); }
+.burger::after  { transform: translateY(5px); }
+
+.menu-btn[aria-expanded="true"] .burger { background: transparent; }
+.menu-btn[aria-expanded="true"] .burger::before { transform: rotate(45deg); }
+.menu-btn[aria-expanded="true"] .burger::after  { transform: rotate(-45deg); }
+
+/* ==========================================================================
+   2. Menú de navegación
+   En teléfono y tableta es un panel desplegable; en laptop y escritorio
+   se muestra en línea (ver responsive.css).
+   ========================================================================== */
+.nav {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: calc(100vh - var(--header-h));
+  max-height: calc(100dvh - var(--header-h));
+  overflow-y: auto;
+  padding: 10px var(--gutter) 18px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.nav.is-open {
+  display: block;
+}
+
+.nav-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-list a {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 15px;
+  text-decoration: none;
+  transition: color .15s, background .15s;
+}
+
+.nav-list a:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+.nav-list a.is-current {
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   3. Cuerpo: secciones
+   ========================================================================== */
+.band {
+  padding-block: var(--band-pad);
+  border-top: 1px solid var(--line);
+}
+
+.band.alt {
+  background: var(--surface-2);
+}
+
+.sec-head {
+  max-width: 72ch;
+  margin-bottom: clamp(34px, 5vw, 52px);
+}
+
+/* ==========================================================================
+   4. Pie de página
+   ========================================================================== */
+.site-foot {
+  padding-top: clamp(48px, 7vw, 76px);
+  border-top: 1px solid var(--line);
+  background: var(--foot-bg);
+  color: var(--foot-ink);
+}
+
+.site-foot .brand {
+  margin-bottom: 16px;
+}
+
+.site-foot .mark {
+  box-shadow: none;
+}
+
+.site-foot .brand-name {
+  color: var(--foot-strong);
+}
+
+.site-foot .brand-slogan {
+  display: block;
+  color: var(--foot-accent);
+}
+
+.foot-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 36px;
+}
+
+.foot-title {
+  margin: 0 0 16px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: .16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--foot-muted);
+}
+
+.foot-about {
+  max-width: 34ch;
+  margin: 0;
+  color: var(--foot-muted);
+  font-size: 14.5px;
+}
+
+.foot-links {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.foot-links a {
+  color: var(--foot-ink);
+  font-size: 14.5px;
+  text-decoration: none;
+}
+
+.foot-links a:hover {
+  color: var(--foot-strong);
+  text-decoration: underline;
+}
+
+.social {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.social a {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--foot-chip);
+  color: var(--foot-ink);
+  transition: background .15s, transform .15s;
+}
+
+.social a:hover {
+  background: var(--foot-chip-hover);
+  transform: translateY(-2px);
+}
+
+.social svg {
+  display: block;
+  width: 19px;
+  height: 19px;
+  fill: currentColor;
+}
+
+.foot-note {
+  margin: 14px 0 0;
+  color: var(--foot-faint);
+  font-size: 12px;
+}
+
+.foot-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 22px;
+  margin-top: clamp(38px, 6vw, 58px);
+  padding-block: 22px calc(22px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--foot-line);
+  color: var(--foot-faint);
+  font-size: 13px;
+}

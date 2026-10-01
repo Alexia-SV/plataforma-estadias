@@ -1,0 +1,153 @@
+/* ==========================================================================
+   base.css — Reinicio mínimo, tipografía global y utilidades
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--header-h) + 20px);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img,
+video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--accent-deep);
+  text-underline-offset: 3px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* ---------- Jerarquía tipográfica ---------- */
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: var(--fs-h2);
+  line-height: 1.12;
+  letter-spacing: -.01em;
+  margin-bottom: 14px;
+}
+
+h3 {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -.005em;
+  margin-bottom: 8px;
+}
+
+/* Subtítulo en serif dentro de una sección */
+.sub-title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 22px;
+  margin-bottom: 18px;
+}
+
+/* Rótulo corto sobre los títulos de sección */
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 14px;
+}
+
+/* Párrafo introductorio */
+.lede {
+  font-size: var(--fs-lede);
+  color: var(--muted);
+  max-width: 62ch;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+/* Nota breve al pie de un bloque */
+.note {
+  font-size: 15px;
+  color: var(--muted);
+  max-width: 62ch;
+  margin: 22px 0 0;
+}
+
+/* ---------- Utilidades ---------- */
+.wrap {
+  width: 100%;
+  max-width: var(--max-width);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Oculta visualmente sin quitarlo a los lectores de pantalla */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Enlace para saltar directo al contenido con el teclado */
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: 0 0 10px 0;
+  background: var(--brand-deep);
+  color: var(--on-brand);
+}
+
+.skip:focus {
+  left: 0;
+}

@@ -1,0 +1,173 @@
+/* ==========================================================================
+   responsive.css — Adaptación a cada tipo de dispositivo
+   --------------------------------------------------------------------------
+   El sitio se escribe "mobile first": los estilos de layout.css y
+   components.css ya son los del teléfono. Aquí solo se agregan los
+   cambios a partir de cada ancho mínimo.
+
+     Teléfonos    < 768 px   → estilos base (1 columna, menú desplegable)
+     Tabletas     ≥ 768 px   → 2 columnas, menú desplegable en 2 columnas
+     Laptops      ≥ 1024 px  → menú en línea, 3 y 4 columnas
+     Escritorio   ≥ 1280 px  → lema visible, módulos en 4 columnas
+   ========================================================================== */
+
+/* ==========================================================================
+   Teléfonos pequeños (< 360 px)
+   ========================================================================== */
+@media (max-width: 359.98px) {
+  .brand { gap: 10px; }
+  .brand-name { font-size: 16.5px; }
+  .mark { width: 34px; height: 34px; font-size: 19px; }
+  .stat-strip { grid-template-columns: 1fr; }
+  .hero-actions .btn { flex: 1 1 100%; justify-content: center; }
+}
+
+/* ==========================================================================
+   Tabletas (≥ 768 px)
+   ========================================================================== */
+@media (min-width: 768px) {
+  :root { --header-h: 68px; }
+
+  /* Encabezado: el lema y el texto de los botones ya caben */
+  .brand-name { font-size: 19px; }
+  .brand-slogan { display: block; }
+  .head-btn { padding: 10px 14px; }
+  .head-btn .btn-label {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
+
+  /* Menú desplegable en dos columnas */
+  .nav-list { grid-template-columns: repeat(2, 1fr); gap: 4px 12px; }
+
+  /* Cuerpo */
+  .stat-strip { grid-template-columns: repeat(4, 1fr); }
+  .stat { padding: 20px 22px; }
+  .compare { grid-template-columns: repeat(2, 1fr); }
+  .panel { padding: 26px; }
+  .modules { grid-template-columns: repeat(2, 1fr); }
+  .module { padding: 24px; }
+  .flow { grid-template-columns: repeat(2, 1fr); gap: 32px 28px; }
+  .video-notes { grid-template-columns: repeat(3, 1fr); }
+
+  /* Tarjetas de rol: una por fila, con la lista a la derecha */
+  .card {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas:
+      "tag    list"
+      "title  list"
+      "who    list"
+      "device list";
+    column-gap: 36px;
+    padding: 30px;
+  }
+  .card .tag    { grid-area: tag; }
+  .card h3      { grid-area: title; }
+  .card .who    { grid-area: who; }
+  .card ul      { grid-area: list; margin: 0; }
+  .card .device { grid-area: device; margin: 18px 0 0; }
+
+  /* Pares etiqueta / valor en dos columnas */
+  .specs li { grid-template-columns: minmax(120px, 30%) 1fr; gap: 16px; }
+  .timeline li { grid-template-columns: minmax(104px, 132px) 1fr; gap: 18px; }
+
+  /* Pie de página */
+  .foot-grid { grid-template-columns: repeat(2, 1fr); gap: 40px 36px; }
+}
+
+/* ==========================================================================
+   Laptops (≥ 1024 px)
+   ========================================================================== */
+@media (min-width: 1024px) {
+  /* Menú en línea: desaparece el botón «Menú» */
+  .menu-btn { display: none; }
+  .brand-slogan { display: none; } /* se libera espacio para el menú */
+  .install-btn .btn-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .install-btn { padding: 10px; }
+
+  .nav {
+    display: block;
+    position: static;
+    order: 1;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+  }
+  .head-actions { order: 2; }
+  .nav-list { display: flex; gap: 2px; }
+  .nav-list a {
+    padding: 8px 10px;
+    border-radius: var(--pill);
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  /* Cuerpo */
+  .cards { grid-template-columns: repeat(3, 1fr); }
+  .card { display: flex; padding: 28px 26px; }
+  .card ul { margin-bottom: 22px; }
+  .card .device { margin-top: auto; }
+  .modules { grid-template-columns: repeat(3, 1fr); }
+  .flow { grid-template-columns: repeat(4, 1fr); gap: 22px; }
+  .split { grid-template-columns: repeat(2, 1fr); }
+
+  /* Pie de página en cuatro columnas */
+  .foot-grid { grid-template-columns: 1.5fr 1fr 1fr 1.2fr; }
+}
+
+/* ==========================================================================
+   Escritorio (≥ 1280 px)
+   ========================================================================== */
+@media (min-width: 1280px) {
+  :root { --header-h: 72px; }
+
+  .brand-slogan { display: block; }
+  .install-btn { padding: 10px 14px; }
+  .install-btn .btn-label {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
+  .nav-list a { padding: 8px 11px; }
+
+  .modules { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ==========================================================================
+   Preferencias del usuario y modo aplicación
+   ========================================================================== */
+
+/* Menos movimiento para quien lo pide en su sistema */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Abierta como app instalada: el encabezado respeta las muescas laterales */
+@media (display-mode: standalone) {
+  .head-row {
+    padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+  }
+}

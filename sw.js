@@ -17,13 +17,14 @@
    caché anterior.
    ========================================================================== */
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const STATIC_CACHE = `estadias-${VERSION}`;
 const FONT_CACHE = 'estadias-fuentes';
 
 // Rutas relativas a este archivo (funciona también en una subcarpeta)
 const PRECACHE = [
   './',
+  'portal.html',
   'offline.html',
   'manifest.webmanifest',
   'css/variables.css',
@@ -31,9 +32,14 @@ const PRECACHE = [
   'css/layout.css',
   'css/components.css',
   'css/responsive.css',
+  'css/portal.css',
   'js/toast.js',
   'js/navigation.js',
   'js/pwa.js',
+  'js/config.js',
+  'js/auth.js',
+  'js/portal.js',
+  'js/vendor/supabase.js',
   'icons/icon.svg',
   'icons/favicon-32.png',
   'icons/icon-192.png',

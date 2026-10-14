@@ -22,6 +22,7 @@ instalación ni modo sin conexión.
 ```
 plataforma-estadias/
 ├── index.html              Página principal (solo estructura y contenido)
+├── portal.html             Portal del alumno: inicio de sesión, registro y bienvenida
 ├── offline.html            Página que se muestra sin conexión en rutas no guardadas
 ├── manifest.webmanifest    Nombre, íconos, colores y atajos de la app instalada
 ├── sw.js                   Service worker: caché y funcionamiento sin conexión
@@ -30,14 +31,49 @@ plataforma-estadias/
 │   ├── base.css            Reinicio, jerarquía tipográfica y utilidades
 │   ├── layout.css          Encabezado, menú, secciones y pie de página
 │   ├── components.css      Botones, tarjetas, módulos, video, línea de tiempo, avisos
-│   └── responsive.css      Ajustes para tableta, laptop y escritorio
+│   ├── responsive.css      Ajustes para tableta, laptop y escritorio
+│   └── portal.css          Diseño vibrante del Portal del alumno
 ├── js/
 │   ├── toast.js            Avisos emergentes accesibles
 │   ├── navigation.js       Menú desplegable y sección activa
-│   └── pwa.js              Registro del service worker, botón «Instalar app», conexión
+│   ├── pwa.js              Registro del service worker, botón «Instalar app», conexión
+│   ├── config.js           Datos de conexión con Supabase (URL y clave publicable)
+│   ├── auth.js             Registro, inicio y cierre de sesión con Supabase
+│   ├── portal.js           Pestañas, validación de formularios y bienvenida
+│   └── vendor/supabase.js  Librería oficial de Supabase (v2, licencia MIT)
+├── supabase/esquema.sql    Tabla alumnos, seguridad (RLS) y funciones de la base de datos
 ├── icons/                  Íconos de la app (SVG, 192, 512, enmascarables, iOS)
 └── media/                  Imagen principal, video del recorrido y capturas de la app
 ```
+
+## Portal del alumno (inicio de sesión y registro)
+
+El portal guarda las cuentas en **Supabase**, una base de datos PostgreSQL en la nube.
+Funciona tanto en `localhost` como en la página publicada.
+
+| Dato | Dónde se guarda |
+| --- | --- |
+| Correo y contraseña (cifrada) | Supabase Auth (`auth.users`) |
+| Nombre, matrícula, nivel y fecha de registro | Tabla `public.alumnos` |
+
+Cada alumno solo puede leer su propio registro: lo garantizan las políticas RLS de
+`supabase/esquema.sql`. Al registrarse, un disparador de la base de datos crea su
+renglón en `alumnos` con los datos del formulario.
+
+### Configuración (una sola vez)
+
+1. Crea una cuenta en [supabase.com](https://supabase.com) y un proyecto nuevo.
+2. En **SQL Editor**, pega el contenido de `supabase/esquema.sql` y pulsa **Run**.
+3. En **Authentication → Sign In / Providers → Email**, desactiva **Confirm email**
+   para que el alumno entre en cuanto se registra (recomendado para la demostración).
+   Si la dejas activa, el alumno debe confirmar desde su correo antes de iniciar sesión.
+4. En **Authentication → URL Configuration**, pon como *Site URL*
+   `https://alexia-sv.github.io/plataforma-estadias/portal.html`.
+5. Copia en `js/config.js` la **Project URL** y la **Publishable key** (o *anon key*).
+   Nunca uses ahí la *secret key* ni la *service_role key*.
+
+Las contraseñas deben tener al menos 8 caracteres, con letras y números; la matrícula,
+10 dígitos.
 
 ## Requisitos cubiertos
 
@@ -80,7 +116,7 @@ Para probarlo: DevTools → *Application* → *Service workers* / *Manifest*; en
   y subir `VERSION` (por ejemplo, de `v1` a `v2`). También hay que subirla al editar
   `offline.html`, porque esa página solo se lee desde la caché.
 - **Cambiar las tipografías de Google Fonts**: la URL aparece en `index.html`,
-  `offline.html` y `sw.js` (`FONT_CSS`); las tres deben ser idénticas.
+  `portal.html`, `offline.html` y `sw.js` (`FONT_CSS`); todas deben ser idénticas.
 
 ## Publicación
 

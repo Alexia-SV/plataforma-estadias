@@ -37,6 +37,12 @@
   ],
   "shortcuts": [
     {
+      "name": "Portal del alumno",
+      "short_name": "Portal",
+      "url": "./portal.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
       "name": "Ver el recorrido en video",
       "short_name": "Recorrido",
       "url": "./#recorrido",

@@ -87,14 +87,16 @@
   /* Menú en línea: desaparece el botón «Menú» */
   .menu-btn { display: none; }
   .brand-slogan { display: none; } /* se libera espacio para el menú */
-  .install-btn .btn-label {
+  .install-btn .btn-label,
+  .portal-btn .btn-label {
     position: absolute;
     width: 1px;
     height: 1px;
     overflow: hidden;
     clip: rect(0 0 0 0);
   }
-  .install-btn { padding: 10px; }
+  .install-btn,
+  .portal-btn { padding: 10px; }
 
   .nav {
     display: block;
@@ -136,8 +138,8 @@
   :root { --header-h: 72px; }
 
   .brand-slogan { display: block; }
-  .install-btn { padding: 10px 14px; }
-  .install-btn .btn-label {
+  .portal-btn { padding: 10px 14px; }
+  .portal-btn .btn-label {
     position: static;
     width: auto;
     height: auto;

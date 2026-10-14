@@ -1,0 +1,639 @@
+/* ==========================================================================
+   portal.css — Portal del alumno (inicio de sesión y registro)
+   --------------------------------------------------------------------------
+   Paleta vibrante propia del portal: violeta, fucsia y naranja sobre un
+   degradado, con acentos amarillo, cian y verde. Mobile first; el diseño
+   de dos columnas aparece desde 960 px.
+
+   Índice
+     1. Tokens del portal       5. Formularios
+     2. Fondo                   6. Botones
+     3. Encabezado              7. Bienvenida
+     4. Presentación y tarjeta  8. Pantallas grandes y modo oscuro
+   ========================================================================== */
+
+/* ---------- 1. Tokens ---------- */
+.portal {
+  --vivo-violeta: #7c3aed;
+  --vivo-violeta-osc: #5b21b6;
+  --vivo-fucsia: #db2777;
+  --vivo-naranja: #f97316;
+  --vivo-amarillo: #facc15;
+  --vivo-cian: #06b6d4;
+  --vivo-verde: #10b981;
+  --vivo-rojo: #dc2626;
+
+  --p-tinta: #1e1b4b;
+  --p-texto: #4c4675;
+  --p-tarjeta: #ffffff;
+  --p-suave: #f5f3ff;
+  --p-borde: #e4dcfb;
+  --p-campo: #ffffff;
+  --p-sombra: 0 30px 70px -25px rgba(46, 16, 101, .55), 0 8px 20px -10px rgba(46, 16, 101, .25);
+
+  --degradado: linear-gradient(135deg, #6d28d9 0%, #c026d3 45%, #db2777 70%, #ea580c 100%);
+  --degradado-boton: linear-gradient(100deg, #7c3aed 0%, #db2777 55%, #f97316 100%);
+
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #6d28d9;
+  background: var(--degradado);
+  color: var(--p-tinta);
+  overflow-x: hidden;
+}
+
+/* ---------- 2. Fondo con burbujas de color ---------- */
+.portal-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.burbuja {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: .55;
+  animation: flotar 14s ease-in-out infinite alternate;
+}
+
+.b1 { width: 340px; height: 340px; top: -90px; right: -60px; background: var(--vivo-amarillo); }
+.b2 { width: 300px; height: 300px; bottom: -80px; left: -80px; background: var(--vivo-cian); animation-delay: -5s; }
+.b3 { width: 220px; height: 220px; top: 45%; left: 55%; background: #f472b6; animation-delay: -9s; }
+
+@keyframes flotar {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(30px, -40px) scale(1.12); }
+}
+
+/* ---------- 3. Encabezado ---------- */
+.portal-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 1140px;
+  margin-inline: auto;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) var(--gutter) 8px;
+}
+
+.portal-marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.portal-marca .mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: #fff;
+  color: var(--vivo-violeta);
+  font-size: 20px;
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, .35);
+}
+
+.portal-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: var(--pill);
+  background: rgba(255, 255, 255, .16);
+  border: 1px solid rgba(255, 255, 255, .35);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: background .15s;
+}
+
+.portal-volver:hover { background: rgba(255, 255, 255, .28); }
+.portal-volver svg { width: 16px; height: 16px; }
+
+/* ---------- 4. Presentación y tarjeta ---------- */
+.portal-main {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 24px;
+  max-width: 1140px;
+  margin-inline: auto;
+  padding: 12px var(--gutter) calc(40px + env(safe-area-inset-bottom, 0px));
+}
+
+.portal-intro {
+  color: #fff;
+  text-shadow: 0 1px 12px rgba(46, 16, 101, .35);
+}
+
+.portal-chip {
+  display: inline-block;
+  margin: 8px 0 14px;
+  padding: 6px 14px;
+  border-radius: var(--pill);
+  background: var(--vivo-amarillo);
+  color: #1e1b4b; /* fijo: siempre oscuro sobre amarillo */
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+
+.portal-intro h1 {
+  max-width: 14ch;
+  margin-bottom: 12px;
+  color: #fff;
+  font-family: var(--serif);
+  font-size: clamp(34px, 8vw, 62px);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -.015em;
+}
+
+.portal-intro h1 span {
+  font-style: italic;
+  color: var(--vivo-amarillo);
+}
+
+.portal-lede {
+  max-width: 44ch;
+  margin: 0;
+  font-size: 17px;
+  opacity: .95;
+}
+
+.portal-puntos {
+  display: none; /* visibles en pantallas grandes */
+  margin: 26px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.portal-puntos li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 0;
+  font-weight: 600;
+}
+
+.punto {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, .18);
+}
+
+.p-amarillo { background: var(--vivo-amarillo); }
+.p-cian { background: var(--vivo-cian); }
+.p-verde { background: var(--vivo-verde); }
+
+.portal-card {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 460px;
+  justify-self: center;
+  padding: 26px 22px 24px;
+  border-radius: 26px;
+  background: var(--p-tarjeta);
+  box-shadow: var(--p-sombra);
+}
+
+/* Franja de color en la parte superior de la tarjeta */
+.portal-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 6px;
+  background: var(--degradado-boton);
+}
+
+.portal-alerta {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fef3c7;
+  color: #78350f;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.portal-alerta code {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+/* Pestañas */
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-bottom: 22px;
+  padding: 5px;
+  border-radius: 16px;
+  background: var(--p-suave);
+}
+
+.tab {
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--p-texto);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s, color .2s, box-shadow .2s;
+}
+
+.tab:hover { color: var(--vivo-violeta); }
+
+.tab[aria-selected="true"] {
+  background: linear-gradient(100deg, var(--vivo-violeta), var(--vivo-fucsia));
+  color: #fff;
+  box-shadow: 0 8px 18px -8px rgba(124, 58, 237, .8);
+}
+
+.vista h2 {
+  margin-bottom: 4px;
+  color: var(--p-tinta);
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 500;
+}
+
+.vista-sub {
+  margin: 0 0 20px;
+  color: var(--p-texto);
+  font-size: 15px;
+}
+
+.vista-cambio {
+  margin: 18px 0 0;
+  color: var(--p-texto);
+  font-size: 14px;
+  text-align: center;
+}
+
+.vista-cambio a {
+  color: var(--vivo-fucsia);
+  font-weight: 700;
+}
+
+/* ---------- 5. Formularios ---------- */
+.campo {
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.campo label,
+.campo legend {
+  display: block;
+  margin-bottom: 6px;
+  padding: 0;
+  color: var(--p-tinta);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.campo input[type="text"],
+.campo input[type="email"],
+.campo input[type="password"] {
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 14px;
+  border: 2px solid var(--p-borde);
+  border-radius: 14px;
+  background: var(--p-campo);
+  color: var(--p-tinta);
+  font: 500 16px/1.2 var(--sans); /* 16 px evita el zoom automático en iPhone */
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.campo input::placeholder { color: #a39cc4; }
+
+.campo input:hover { border-color: #c4b5fd; }
+
+.campo input:focus {
+  outline: none;
+  border-color: var(--vivo-violeta);
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, .2);
+}
+
+.campo input[aria-invalid="true"] {
+  border-color: var(--vivo-rojo);
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, .12);
+}
+
+.campo-fila {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 12px;
+}
+
+.campo-pass {
+  position: relative;
+}
+
+.campo-pass input {
+  padding-right: 52px;
+}
+
+.ver-pass {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--p-texto);
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.ver-pass:hover { background: var(--p-suave); color: var(--vivo-violeta); }
+.ver-pass[aria-pressed="true"] { color: var(--vivo-fucsia); }
+.ver-pass svg { width: 20px; height: 20px; }
+
+/* Opciones de nivel (TSU / Ingeniería) */
+.opciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.opcion {
+  position: relative;
+  margin: 0 !important;
+}
+
+.opcion input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  cursor: pointer;
+}
+
+.opcion span {
+  display: grid;
+  place-items: center;
+  min-height: 50px;
+  padding: 0 8px;
+  border: 2px solid var(--p-borde);
+  border-radius: 14px;
+  background: var(--p-campo);
+  color: var(--p-texto);
+  font-size: 15px;
+  font-weight: 700;
+  transition: all .15s;
+}
+
+.opcion input:hover + span { border-color: #67e8f9; }
+
+.opcion input:checked + span {
+  border-color: var(--vivo-cian);
+  background: #cffafe;
+  color: #155e75;
+}
+
+.opcion input:focus-visible + span {
+  outline: 3px solid var(--vivo-violeta);
+  outline-offset: 2px;
+}
+
+.opcion input[aria-invalid="true"] + span { border-color: var(--vivo-rojo); }
+
+.campo-ayuda {
+  margin: 6px 0 0;
+  color: var(--p-texto);
+  font-size: 13px;
+}
+
+.campo-error,
+.form-error {
+  margin: 6px 0 0;
+  color: var(--vivo-rojo);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.campo-error:empty,
+.form-error:empty {
+  display: none;
+}
+
+.form-error {
+  margin: 4px 0 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ---------- 6. Botones ---------- */
+.btn-vivo {
+  width: 100%;
+  min-height: 54px;
+  margin-top: 6px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--degradado-boton);
+  background-size: 160% 100%;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  box-shadow: 0 14px 28px -12px rgba(219, 39, 119, .75);
+  cursor: pointer;
+  transition: background-position .4s, transform .15s, box-shadow .15s;
+}
+
+.btn-vivo:hover {
+  background-position: 100% 0;
+  transform: translateY(-1px);
+  box-shadow: 0 18px 34px -12px rgba(219, 39, 119, .85);
+}
+
+.btn-vivo:active { transform: translateY(0); }
+
+.btn-vivo:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-vivo.is-loading { cursor: progress; }
+
+.btn-borde {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 22px;
+  border: 2px solid var(--vivo-violeta);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--vivo-violeta);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+
+.btn-borde:hover {
+  background: var(--vivo-violeta);
+  color: #fff;
+}
+
+.portal :focus-visible {
+  outline: 3px solid var(--vivo-amarillo);
+  outline-offset: 3px;
+}
+
+.portal .portal-card :focus-visible {
+  outline-color: var(--vivo-violeta);
+}
+
+/* ---------- 7. Bienvenida ---------- */
+.bienvenida {
+  text-align: center;
+}
+
+.bienvenida h2:focus { outline: none; }
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin: 6px auto 14px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--vivo-amarillo), var(--vivo-naranja));
+  color: #1e1b4b;
+  font-size: 30px;
+  font-weight: 700;
+  box-shadow: 0 0 0 6px #fef3c7, 0 14px 26px -10px rgba(249, 115, 22, .7);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.chip {
+  padding: 7px 14px;
+  border-radius: var(--pill);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.chip b { font-family: var(--mono); }
+.chip-violeta { background: #ede9fe; color: var(--vivo-violeta-osc); }
+.chip-naranja { background: #ffedd5; color: #9a3412; }
+
+.datos {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  text-align: left;
+}
+
+.datos div {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--p-suave);
+}
+
+.datos dt {
+  color: var(--p-texto);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.datos dd {
+  margin: 0;
+  color: var(--p-tinta);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.bienvenida-nota {
+  margin: 16px 0 0;
+  color: var(--p-texto);
+  font-size: 14px;
+}
+
+/* ---------- 8. Pantallas medianas y grandes ---------- */
+@media (min-width: 480px) {
+  .portal-card { padding: 32px 30px 28px; }
+  .campo-fila { grid-template-columns: 1fr 1fr; }
+}
+
+@media (min-width: 960px) {
+  .portal-main {
+    grid-template-columns: 1fr 460px;
+    align-items: center;
+    gap: 56px;
+    min-height: calc(100dvh - 90px);
+    padding-top: 0;
+  }
+
+  .portal-card { justify-self: end; }
+  .portal-puntos { display: block; }
+  .portal-lede { font-size: 19px; }
+}
+
+/* Modo oscuro: la tarjeta se oscurece y el degradado se mantiene */
+@media (prefers-color-scheme: dark) {
+  .portal {
+    --p-tinta: #f5f3ff;
+    --p-texto: #c4b5fd;
+    --p-tarjeta: #1c1631;
+    --p-suave: #2a2148;
+    --p-borde: #43357a;
+    --p-campo: #241c3d;
+  }
+
+  .opcion input:checked + span { background: #083344; color: #a5f3fc; }
+  .chip-violeta { background: #3b2a74; color: #ede9fe; }
+  .chip-naranja { background: #4a2511; color: #fed7aa; }
+  .portal-alerta { background: #422006; color: #fde68a; }
+  .form-error { background: #450a0a; color: #fecaca; }
+  .campo-error { color: #fca5a5; }
+  .vista-cambio a { color: #f9a8d4; }
+  .btn-borde { color: #c4b5fd; border-color: #a78bfa; }
+  .btn-borde:hover { background: #a78bfa; color: #1c1631; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .burbuja { animation: none; }
+}

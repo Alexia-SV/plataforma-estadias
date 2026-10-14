@@ -116,6 +116,21 @@
   color: var(--accent-deep);
 }
 
+/* Acceso al Portal del alumno: usa el degradado vibrante del portal */
+.portal-btn {
+  border-color: transparent;
+  background: linear-gradient(100deg, #7c3aed, #db2777);
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 6px 14px -8px rgba(219, 39, 119, .9);
+}
+
+.portal-btn:hover {
+  border-color: transparent;
+  color: #fff;
+  filter: brightness(1.08);
+}
+
 /* En teléfono los botones solo muestran el ícono; el texto sigue
    disponible para lectores de pantalla. */
 .head-btn .btn-label {

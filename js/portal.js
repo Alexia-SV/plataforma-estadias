@@ -1,81 +1,60 @@
 /* ==========================================================================
-   portal.js — Interfaz del Portal del alumno
+   portal.js — Acceso al portal (portal.html)
    --------------------------------------------------------------------------
-   1. Pestañas «Iniciar sesión» / «Registrarse» (también con #login y #registro).
+   1. Pestañas «Iniciar sesión» / «Registrarme» (también con #login y #registro).
    2. Validación de los formularios con mensajes en español.
-   3. Registro e inicio de sesión (usa App.auth).
-   4. Pantalla de bienvenida y cierre de sesión.
-   Depende de toast.js y auth.js.
+   3. Inicio de sesión: lleva a alumno.html o asesor.html según el rol.
+   4. Registro de alumnos.
+   Depende de toast.js, cache-api.js y auth.js.
    ========================================================================== */
 (() => {
   'use strict';
 
   const { auth, toast } = window.App;
+  const DESTINO = { alumno: 'alumno.html', asesor: 'asesor.html' };
 
-  const tabs = {
-    login: document.getElementById('tab-login'),
-    registro: document.getElementById('tab-registro'),
-  };
-  const paneles = {
-    login: document.getElementById('panel-login'),
-    registro: document.getElementById('panel-registro'),
-    bienvenida: document.getElementById('panel-bienvenida'),
-  };
+  const tabs = { login: document.getElementById('tab-login'), registro: document.getElementById('tab-registro') };
+  const paneles = { login: document.getElementById('panel-login'), registro: document.getElementById('panel-registro') };
   const tablist = document.getElementById('tabs');
 
-  /* ==========================================================================
-     1. Vistas y pestañas
-     ========================================================================== */
+  /* ---------- 1. Pestañas ---------- */
   function mostrar(vista, { enfocar = false } = {}) {
-    const conSesion = vista === 'bienvenida';
-    tablist.hidden = conSesion;
-
     Object.entries(paneles).forEach(([nombre, panel]) => { panel.hidden = nombre !== vista; });
     Object.entries(tabs).forEach(([nombre, tab]) => {
       const activa = nombre === vista;
       tab.setAttribute('aria-selected', String(activa));
       tab.tabIndex = activa ? 0 : -1;
     });
-
-    if (!conSesion && location.hash !== `#${vista}`) history.replaceState(null, '', `#${vista}`);
-    if (conSesion && location.hash) history.replaceState(null, '', location.pathname);
+    if (location.hash !== `#${vista}`) history.replaceState(null, '', `#${vista}`);
     if (enfocar) paneles[vista].querySelector('input')?.focus();
   }
 
-  Object.entries(tabs).forEach(([nombre, tab]) => {
-    tab.addEventListener('click', () => mostrar(nombre, { enfocar: true }));
-  });
-
-  // Flechas izquierda/derecha para cambiar de pestaña con el teclado
+  Object.entries(tabs).forEach(([nombre, tab]) => tab.addEventListener('click', () => mostrar(nombre, { enfocar: true })));
   tablist.addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
     const siguiente = tabs.login.getAttribute('aria-selected') === 'true' ? 'registro' : 'login';
     mostrar(siguiente);
     tabs[siguiente].focus();
   });
-
-  // Enlaces «Regístrate aquí» / «Inicia sesión»
-  document.querySelectorAll('[data-ir]').forEach((enlace) => {
-    enlace.addEventListener('click', (e) => {
-      e.preventDefault();
-      mostrar(enlace.dataset.ir, { enfocar: true });
-    });
+  document.querySelectorAll('[data-ir]').forEach((a) => a.addEventListener('click', (e) => {
+    e.preventDefault();
+    mostrar(a.dataset.ir, { enfocar: true });
+  }));
+  window.addEventListener('hashchange', () => {
+    if (location.hash === '#registro' || location.hash === '#login') mostrar(location.hash.slice(1));
   });
 
-  // Botones para mostrar u ocultar la contraseña
-  document.querySelectorAll('.ver-pass').forEach((boton) => {
-    boton.addEventListener('click', () => {
-      const input = document.getElementById(boton.getAttribute('aria-controls'));
-      const visible = input.type === 'password';
-      input.type = visible ? 'text' : 'password';
-      boton.setAttribute('aria-pressed', String(visible));
-      boton.setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
-    });
-  });
+  // Mostrar u ocultar la contraseña
+  document.querySelectorAll('.ver-pass').forEach((boton) => boton.addEventListener('click', (e) => {
+    e.preventDefault();
+    const input = document.getElementById(boton.getAttribute('aria-controls'));
+    const visible = input.type === 'password';
+    input.type = visible ? 'text' : 'password';
+    boton.setAttribute('aria-pressed', String(visible));
+    boton.setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+  }));
 
-  /* ==========================================================================
-     2. Validación
-     ========================================================================== */
+  /* ---------- 2. Validación ---------- */
   const REGLAS = {
     nombre: (v) => (/^[\p{L}][\p{L} .'-]{2,119}$/u.test(v) ? '' : 'Escribe tu nombre completo (solo letras).'),
     matricula: (v) => (/^\d{10}$/.test(v) ? '' : 'La matrícula debe tener 10 dígitos.'),
@@ -88,69 +67,77 @@
 
   function marcar(form, campo, mensaje) {
     const input = form.elements[campo];
-    const nodo = input instanceof RadioNodeList ? input[0] : input;
-    const error = form.querySelector(`#${form.id === 'panel-login' ? 'login' : 'reg'}-${campo}-error`);
+    const prefijo = form.id === 'panel-login' ? 'login' : 'reg';
+    const error = document.getElementById(`${prefijo}-${campo}-error`);
     if (error) error.textContent = mensaje;
-    if (input instanceof RadioNodeList) {
-      input.forEach((r) => r.setAttribute('aria-invalid', String(Boolean(mensaje))));
-    } else if (nodo) {
-      nodo.setAttribute('aria-invalid', String(Boolean(mensaje)));
-      if (error) nodo.setAttribute('aria-describedby', [nodo.getAttribute('aria-describedby'), error.id]
-        .filter((v, i, a) => v && a.indexOf(v) === i).join(' '));
+    const nodos = input instanceof RadioNodeList ? [...input] : [input];
+    nodos.forEach((n) => n.setAttribute('aria-invalid', String(Boolean(mensaje))));
+    if (error && !(input instanceof RadioNodeList)) {
+      const ids = new Set(String(input.getAttribute('aria-describedby') || '').split(' ').filter(Boolean));
+      ids.add(error.id);
+      input.setAttribute('aria-describedby', [...ids].join(' '));
     }
-    return mensaje ? nodo : null;
+    return mensaje ? nodos[0] : null;
   }
 
   function validar(form, reglas) {
     let primero = null;
     reglas.forEach(([campo, revisar]) => {
-      const valor = (form.elements[campo].value || '').trim();
-      const invalido = marcar(form, campo, revisar(valor));
+      const invalido = marcar(form, campo, revisar((form.elements[campo].value || '').trim()));
       primero = primero || invalido;
     });
     primero?.focus();
     return !primero;
   }
 
-  // Al corregir un campo se quita su mensaje de error
-  document.querySelectorAll('.vista input').forEach((input) => {
-    input.addEventListener('input', () => {
-      if (input.getAttribute('aria-invalid') !== 'true') return;
-      marcar(input.form, input.name, '');
-    });
-  });
+  document.querySelectorAll('.form input').forEach((input) => input.addEventListener('input', () => {
+    if (input.getAttribute('aria-invalid') === 'true') marcar(input.form, input.name, '');
+  }));
 
-  // La matrícula solo acepta dígitos
   const matricula = document.getElementById('reg-matricula');
   matricula.addEventListener('input', () => { matricula.value = matricula.value.replace(/\D/g, '').slice(0, 10); });
 
-  /* ---------- Estado de envío ---------- */
   function enviando(form, activo, texto) {
     const boton = form.querySelector('button[type="submit"]');
     boton.dataset.texto = boton.dataset.texto || boton.textContent;
     boton.disabled = activo;
-    boton.classList.toggle('is-loading', activo);
-    boton.textContent = activo ? texto : boton.dataset.texto;
+    boton.innerHTML = activo ? `<span class="cargando" aria-hidden="true"></span>${texto}` : boton.dataset.texto;
   }
 
-  function errorGeneral(form, mensaje) {
-    form.querySelector('.form-error').textContent = mensaje;
+  const errorGeneral = (form, mensaje) => { form.querySelector('.form-error').textContent = mensaje; };
+
+  async function irAlPanel(rol) {
+    if (DESTINO[rol]) { location.replace(DESTINO[rol]); return; }
+    await auth.cerrarSesion();
+    throw new Error('Tu cuenta no tiene un perfil de alumno ni de asesor. Contacta a la coordinación de estadías.');
   }
 
-  /* ==========================================================================
-     3. Registro e inicio de sesión
-     ========================================================================== */
+  /* ---------- 3. Inicio de sesión ---------- */
+  paneles.login.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    errorGeneral(form, '');
+    if (!validar(form, [['correo', REGLAS.correo], ['password', REGLAS.passwordLogin]])) return;
+
+    enviando(form, true, 'Entrando…');
+    try {
+      const rol = await auth.iniciarSesion(form.elements.correo.value.trim().toLowerCase(), form.elements.password.value);
+      await irAlPanel(rol);
+    } catch (error) {
+      errorGeneral(form, error.message);
+      enviando(form, false);
+    }
+  });
+
+  /* ---------- 4. Registro de alumnos ---------- */
   paneles.registro.addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.currentTarget;
     errorGeneral(form, '');
 
     const valido = validar(form, [
-      ['nombre', REGLAS.nombre],
-      ['matricula', REGLAS.matricula],
-      ['nivel', REGLAS.nivel],
-      ['correo', REGLAS.correo],
-      ['password', REGLAS.password],
+      ['nombre', REGLAS.nombre], ['matricula', REGLAS.matricula], ['nivel', REGLAS.nivel],
+      ['correo', REGLAS.correo], ['password', REGLAS.password],
     ]);
     const coincide = form.elements.password.value === form.elements.confirmar.value;
     const errConfirmar = marcar(form, 'confirmar', coincide ? '' : 'Las contraseñas no coinciden.');
@@ -159,116 +146,48 @@
 
     enviando(form, true, 'Creando cuenta…');
     try {
+      const correo = form.elements.correo.value.trim().toLowerCase();
       const { requiereConfirmacion } = await auth.registrar({
         nombre: form.elements.nombre.value.trim().replace(/\s+/g, ' '),
         matricula: form.elements.matricula.value.trim(),
         nivel: form.elements.nivel.value,
-        correo: form.elements.correo.value.trim().toLowerCase(),
+        correo,
         password: form.elements.password.value,
       });
 
       if (requiereConfirmacion) {
-        const correo = form.elements.correo.value.trim();
         form.reset();
+        enviando(form, false);
         mostrar('login');
         paneles.login.elements.correo.value = correo;
         toast.show('¡Cuenta creada! Revisa tu correo para confirmarla y después inicia sesión.', { duration: 9000 });
       } else {
-        form.reset();
-        await entrar('¡Cuenta creada! Bienvenido al portal.');
+        await irAlPanel(await auth.rol());
       }
     } catch (error) {
       errorGeneral(form, error.message);
-    } finally {
       enviando(form, false);
     }
   });
 
-  paneles.login.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const form = e.currentTarget;
-    errorGeneral(form, '');
-
-    const valido = validar(form, [
-      ['correo', REGLAS.correo],
-      ['password', REGLAS.passwordLogin],
-    ]);
-    if (!valido) return;
-
-    enviando(form, true, 'Entrando…');
-    try {
-      await auth.iniciarSesion(form.elements.correo.value.trim().toLowerCase(), form.elements.password.value);
-      form.reset();
-      await entrar();
-    } catch (error) {
-      errorGeneral(form, error.message);
-    } finally {
-      enviando(form, false);
-    }
-  });
-
-  /* ==========================================================================
-     4. Bienvenida
-     ========================================================================== */
-  function iniciales(nombre) {
-    return nombre.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('');
-  }
-
-  function pintarBienvenida(perfil) {
-    const primerNombre = perfil.nombre.split(/\s+/)[0];
-    document.getElementById('bv-avatar').textContent = iniciales(perfil.nombre);
-    document.getElementById('bv-nombre').textContent = primerNombre;
-    document.getElementById('bv-matricula').textContent = perfil.matricula;
-    document.getElementById('bv-nivel').textContent = perfil.nivel;
-    document.getElementById('bv-correo').textContent = perfil.correo;
-    document.getElementById('bv-fecha').textContent = new Date(perfil.creado_en)
-      .toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
-    document.getElementById('bv-offline').hidden = !perfil.sinConexion;
-  }
-
-  async function entrar(mensaje) {
-    const perfil = await auth.obtenerPerfil();
-    if (!perfil) throw new Error('No se encontraron tus datos de alumno.');
-    pintarBienvenida(perfil);
-    mostrar('bienvenida');
-    paneles.bienvenida.querySelector('h2').focus({ preventScroll: true });
-    if (mensaje) toast.show(mensaje);
-  }
-
-  document.getElementById('btn-salir').addEventListener('click', async () => {
-    await auth.cerrarSesion();
-    mostrar('login', { enfocar: true });
-    toast.show('Cerraste sesión.');
-  });
-
-  /* ==========================================================================
-     Arranque
-     ========================================================================== */
-  paneles.bienvenida.querySelector('h2').tabIndex = -1;
-
+  /* ---------- Arranque ---------- */
   async function iniciar() {
-    if (!auth.configurado) {
-      document.getElementById('aviso-config').hidden = false;
-      document.querySelectorAll('.vista button[type="submit"]').forEach((b) => { b.disabled = true; });
-    }
-
     mostrar(location.hash === '#registro' ? 'registro' : 'login');
 
+    if (!auth.configurado) {
+      document.getElementById('aviso-config').hidden = false;
+      document.querySelectorAll('.form button[type="submit"]').forEach((b) => { b.disabled = true; });
+      return;
+    }
+
+    // Si ya hay una sesión, se va directo a su panel
     try {
-      const perfil = await auth.obtenerPerfil();
-      if (perfil) {
-        pintarBienvenida(perfil);
-        mostrar('bienvenida');
-      }
+      const rol = await auth.rol();
+      if (DESTINO[rol]) location.replace(DESTINO[rol]);
     } catch {
-      // Sin sesión válida: se queda en el formulario
+      // Sin conexión o sesión inválida: se queda en el formulario
     }
   }
-
-  window.addEventListener('hashchange', () => {
-    if (!paneles.bienvenida.hidden) return;
-    if (location.hash === '#registro' || location.hash === '#login') mostrar(location.hash.slice(1));
-  });
 
   iniciar();
 })();

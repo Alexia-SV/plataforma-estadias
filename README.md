@@ -21,30 +21,50 @@ instalación ni modo sin conexión.
 
 ```
 plataforma-estadias/
-├── index.html              Página principal (solo estructura y contenido)
-├── portal.html             Portal del alumno: inicio de sesión, registro y bienvenida
+├── index.html              Página informativa (solo estructura y contenido)
+├── portal.html             Acceso al portal: inicio de sesión y registro de alumnos
+├── alumno.html             Panel del alumno: inicio, tesina, asesor y perfil
+├── asesor.html             Panel del asesor: alumnos, versiones por revisar y observaciones
 ├── offline.html            Página que se muestra sin conexión en rutas no guardadas
 ├── manifest.webmanifest    Nombre, íconos, colores y atajos de la app instalada
 ├── sw.js                   Service worker: caché y funcionamiento sin conexión
 ├── css/
-│   ├── variables.css       Paleta, tipografía, espaciado y modo oscuro (tokens)
+│   ├── variables.css       Paleta, tipografía, espaciado y modo oscuro (página informativa)
 │   ├── base.css            Reinicio, jerarquía tipográfica y utilidades
 │   ├── layout.css          Encabezado, menú, secciones y pie de página
 │   ├── components.css      Botones, tarjetas, módulos, video, línea de tiempo, avisos
 │   ├── responsive.css      Ajustes para tableta, laptop y escritorio
-│   └── portal.css          Diseño vibrante del Portal del alumno
+│   ├── sigep.css           Diseño común SIGEP UTP del equipo (copiado sin cambios)
+│   └── portal.css          Estilos propios del Módulo 4 (solo variables de sigep.css)
 ├── js/
+│   ├── sigep.js            Íconos y menú en celular del diseño SIGEP (copiado sin cambios)
 │   ├── toast.js            Avisos emergentes accesibles
-│   ├── navigation.js       Menú desplegable y sección activa
+│   ├── navigation.js       Menú de la página informativa
 │   ├── pwa.js              Registro del service worker, botón «Instalar app», conexión
 │   ├── config.js           Datos de conexión con Supabase (URL y clave publicable)
-│   ├── auth.js             Registro, inicio y cierre de sesión con Supabase
-│   ├── portal.js           Pestañas, validación de formularios y bienvenida
+│   ├── cache-api.js        Caché de las respuestas de la API (Cache Storage)
+│   ├── auth.js             Cuentas, sesión y rol (alumno o asesor)
+│   ├── tesina.js           Subida de versiones, historial, descargas y observaciones
+│   ├── panel.js            Menú, vistas y dibujo común de alumno.html y asesor.html
+│   ├── portal.js           Pestañas y validación de inicio de sesión y registro
+│   ├── alumno.js           Panel del alumno
+│   ├── asesor.js           Panel del asesor
 │   └── vendor/supabase.js  Librería oficial de Supabase (v2, licencia MIT)
-├── supabase/esquema.sql    Tabla alumnos, seguridad (RLS) y funciones de la base de datos
+├── supabase/
+│   ├── esquema.sql         Tabla alumnos, seguridad (RLS) y registro automático
+│   └── tesina.sql          Asesores, asignaciones, versiones, observaciones y archivos
 ├── icons/                  Íconos de la app (SVG, 192, 512, enmascarables, iOS)
 └── media/                  Imagen principal, video del recorrido y capturas de la app
 ```
+
+## Diseño SIGEP UTP
+
+Las pantallas del portal (`portal.html`, `alumno.html` y `asesor.html`) usan el diseño
+común del equipo, del repositorio SIGEUTP: menú lateral azul marino, barra superior y
+acento ámbar del **Módulo 4** (`<body data-modulo="4">`). `css/sigep.css` y `js/sigep.js`
+se copian **sin modificar**; todo lo propio del módulo está en `css/portal.css` y solo usa
+las variables de `sigep.css`. Las opciones que aún no existen (Mis documentos, Mi empresa,
+Avisos, Citas de asesoría) aparecen en el menú como **Próximamente**.
 
 ## Portal del alumno (inicio de sesión y registro)
 
@@ -74,6 +94,65 @@ renglón en `alumnos` con los datos del formulario.
 
 Las contraseñas deben tener al menos 8 caracteres, con letras y números; la matrícula,
 10 dígitos.
+
+## Tesina con versiones
+
+- **El alumno** (`alumno.html#tesina`) sube su tesina en **PDF o Word (.pdf, .doc, .docx),
+  de hasta 10 MB**, con un comentario opcional. Cada subida es una **versión nueva**
+  (v1, v2, v3…) y las anteriores se conservan: puede descargar cualquiera y ver las
+  observaciones de su asesor en cada una.
+- **El asesor** (`asesor.html`) ve a sus alumnos asignados, las versiones pendientes de
+  revisión y todas las versiones de cada alumno. Descarga los archivos, escribe
+  observaciones y puede marcar la versión como **Aprobada** o **Requiere corrección**.
+
+Lo que garantiza la base de datos (`supabase/tesina.sql`):
+
+- El número de versión, el tipo y el tamaño los fija la base de datos, no el navegador.
+- Las versiones no se pueden modificar ni borrar; solo el asesor cambia su estado.
+- Los archivos se guardan en el bucket privado `tesinas` (solo PDF y Word, 10 MB) y se
+  descargan con enlaces temporales de 2 minutos.
+- Cada alumno solo ve lo suyo; cada asesor, solo a sus alumnos asignados.
+
+### Instalar o actualizar la base de datos
+
+En **SQL Editor**, ejecuta en este orden (los dos se pueden volver a ejecutar):
+
+1. `supabase/esquema.sql`
+2. `supabase/tesina.sql`
+
+### Dar de alta a un asesor y asignarle alumnos
+
+1. En **Authentication → Users → Add user**, crea la cuenta del asesor con su correo y
+   una contraseña, y marca **Auto Confirm User**.
+2. En **SQL Editor**, conviértela en asesor y asígnale alumnos por matrícula:
+
+   ```sql
+   select hacer_asesor('asesor@utpuebla.edu.mx', 'Mtra. Nombre Apellido');
+   select asignar_asesor('2311081277', 'asesor@utpuebla.edu.mx');
+   ```
+
+El asesor entra por `portal.html` con su correo y contraseña, y el portal lo lleva a su
+panel. Estas dos funciones solo se pueden ejecutar desde el SQL Editor.
+
+## Caché (Cache API)
+
+El sitio usa tres cachés de Cache Storage:
+
+| Caché | Quién la llena | Contenido | Estrategia |
+| --- | --- | --- | --- |
+| `estadias-v4` | `sw.js` | Páginas, CSS, JS, íconos, imágenes y video | Precarga + primero la red (el video, primero la caché) |
+| `estadias-fuentes` | `sw.js` | Tipografías de Google Fonts | Primero la caché |
+| `estadias-api` | `js/cache-api.js` | Respuestas de la API: perfil, rol, versiones de la tesina, asesor y alumnos del asesor | Stale-while-revalidate |
+
+- Al abrir el portal, los datos del alumno se muestran al instante desde `estadias-api`
+  y en paralelo se piden a Supabase; al llegar, se actualizan la pantalla y la caché.
+- Sin conexión, el portal muestra la copia guardada e indica la fecha en que se guardó.
+- Al cerrar sesión (o si la sesión ya no es válida) se borra `estadias-api`.
+- Solo se guardan consultas: nunca contraseñas, tokens ni el registro o inicio de sesión.
+- En **Mi perfil**, el panel **Datos guardados en este dispositivo** muestra las cachés,
+  cuántos archivos tiene cada una y el espacio usado, con botones para actualizar o borrar.
+- Los archivos de la tesina **no** se guardan en la caché: siempre se descargan del
+  servidor con un enlace temporal. Subir una versión requiere conexión.
 
 ## Requisitos cubiertos
 
@@ -115,8 +194,9 @@ Para probarlo: DevTools → *Application* → *Service workers* / *Manifest*; en
 - **Agregar, quitar o renombrar archivos**: actualizar la lista `PRECACHE` en `sw.js`
   y subir `VERSION` (por ejemplo, de `v1` a `v2`). También hay que subirla al editar
   `offline.html`, porque esa página solo se lee desde la caché.
-- **Cambiar las tipografías de Google Fonts**: la URL aparece en `index.html`,
-  `portal.html`, `offline.html` y `sw.js` (`FONT_CSS`); todas deben ser idénticas.
+- **Cambiar las tipografías de Google Fonts**: hay dos URL y deben coincidir con la lista
+  `FONT_CSS` de `sw.js`. La de la página informativa está en `index.html` y `offline.html`;
+  la del diseño SIGEP (Inter y JetBrains Mono), en `portal.html`, `alumno.html` y `asesor.html`.
 
 ## Publicación
 

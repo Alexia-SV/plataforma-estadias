@@ -3,199 +3,135 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Portal del alumno · Gestión de Estadías</title>
-  <meta name="description" content="Inicia sesión o regístrate en el Portal del alumno para consultar tu estadía desde la computadora o el celular.">
+  <title>Acceso · Portal del alumno · SIGEP UTP</title>
+  <meta name="description" content="Inicia sesión o regístrate en el Portal del alumno para consultar tu estadía y subir tu tesina.">
   <meta name="color-scheme" content="light dark">
 
   <!-- Aplicación web progresiva -->
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#7c3aed">
+  <meta name="theme-color" content="#13213F">
   <meta name="apple-mobile-web-app-title" content="Estadías">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
-  <!-- Tipografías (misma URL que index.html y sw.js) -->
+  <!-- Diseño común SIGEP UTP (misma URL de tipografías que sw.js) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" crossorigin href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&amp;display=swap">
-
-  <!-- Estilos: tokens y base del sitio + estilos propios del portal -->
-  <link rel="stylesheet" href="css/variables.css">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" crossorigin href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+  <link rel="stylesheet" href="css/sigep.css">
   <link rel="stylesheet" href="css/portal.css">
 
-  <!-- Comportamiento: librería de Supabase → configuración → módulos -->
+  <!-- Comportamiento: diseño → Supabase → configuración → módulos -->
+  <script src="js/sigep.js" defer></script>
   <script src="js/vendor/supabase.js" defer></script>
   <script src="js/config.js" defer></script>
   <script src="js/toast.js" defer></script>
+  <script src="js/cache-api.js" defer></script>
   <script src="js/auth.js" defer></script>
   <script src="js/portal.js" defer></script>
   <script src="js/pwa.js" defer></script>
 </head>
-<body class="portal">
+<body class="acceso" data-modulo="4">
 <a class="skip" href="#acceso">Saltar al formulario</a>
 
-<!-- Fondo decorativo -->
-<div class="portal-fondo" aria-hidden="true">
-  <span class="burbuja b1"></span>
-  <span class="burbuja b2"></span>
-  <span class="burbuja b3"></span>
-</div>
-
-<!-- ================================================================
-     ENCABEZADO
-     ================================================================ -->
-<header class="portal-head">
-  <a class="portal-marca" href="./">
-    <span class="mark" aria-hidden="true">E</span>
-    <span>Gestión de Estadías</span>
-  </a>
-  <a class="portal-volver" href="./">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
-    Volver al sitio
-  </a>
-</header>
-
-<!-- ================================================================
-     CUERPO
-     ================================================================ -->
-<main class="portal-main" id="acceso">
-
-  <!-- Presentación -->
-  <section class="portal-intro" aria-labelledby="titulo-portal">
-    <p class="portal-chip">Portal del alumno</p>
-    <h1 id="titulo-portal">Tu estadía, <span>en tu bolsillo</span>.</h1>
-    <p class="portal-lede">Consulta tu expediente, tus documentos y tus avisos desde la computadora o el celular.</p>
-    <ul class="portal-puntos">
-      <li><span class="punto p-amarillo" aria-hidden="true"></span>Tus documentos y su estado</li>
-      <li><span class="punto p-cian" aria-hidden="true"></span>Las observaciones de tu asesor</li>
-      <li><span class="punto p-verde" aria-hidden="true"></span>Avisos y fechas importantes</li>
+<div class="acceso-shell">
+  <!-- ================= PRESENTACIÓN ================= -->
+  <aside class="acceso-info">
+    <a class="logo" href="./"><span class="logo-mark"><i data-ic="cap" data-s="20"></i></span><span><b>SIGEP UTP</b><small>Gestión de Estadías</small></span></a>
+    <div class="module-pill"><span class="n">4</span><span><small>Módulo 4</small>Portal del alumno</span></div>
+    <h1>Tu estadía, <span>en un solo lugar</span>.</h1>
+    <p>Consulta tu avance, sube tu tesina y recibe las observaciones de tu asesor desde la computadora o el celular.</p>
+    <ul class="acceso-puntos">
+      <li><span class="ic-box"><i data-ic="file"></i></span>Tu tesina con todas sus versiones</li>
+      <li><span class="ic-box"><i data-ic="message"></i></span>Las observaciones de tu asesor</li>
+      <li><span class="ic-box"><i data-ic="smartphone"></i></span>Se instala en tu celular y funciona sin conexión</li>
     </ul>
-  </section>
+    <a class="acceso-volver" href="./"><i data-ic="arrowL"></i>Volver al sitio</a>
+  </aside>
 
-  <!-- Tarjeta de acceso -->
-  <div class="portal-card">
+  <!-- ================= FORMULARIOS ================= -->
+  <main class="acceso-main" id="acceso">
+    <div class="card acceso-card">
+      <p class="help warn" id="aviso-config" role="alert" hidden><i data-ic="alert"></i><span>El portal todavía no está conectado a la base de datos. Agrega los datos de Supabase en <code>js/config.js</code>.</span></p>
 
-    <p class="portal-alerta" id="aviso-config" role="alert" hidden>
-      El portal todavía no está conectado a la base de datos. Agrega los datos de Supabase en
-      <code>js/config.js</code>.
-    </p>
+      <div class="tabs" role="tablist" aria-label="Acceso al portal" id="tabs">
+        <button type="button" role="tab" id="tab-login" aria-controls="panel-login" aria-selected="true">Iniciar sesión</button>
+        <button type="button" role="tab" id="tab-registro" aria-controls="panel-registro" aria-selected="false" tabindex="-1">Registrarme</button>
+      </div>
 
-    <!-- Pestañas -->
-    <div class="tabs" role="tablist" aria-label="Acceso al portal" id="tabs">
-      <button class="tab" type="button" role="tab" id="tab-login" aria-controls="panel-login" aria-selected="true">Iniciar sesión</button>
-      <button class="tab" type="button" role="tab" id="tab-registro" aria-controls="panel-registro" aria-selected="false" tabindex="-1">Registrarse</button>
+      <!-- ============ INICIAR SESIÓN ============ -->
+      <form class="form" id="panel-login" role="tabpanel" aria-labelledby="tab-login" novalidate>
+        <div><h2>¡Hola de nuevo!</h2><p class="sub">Entra con tu correo institucional. Alumnos y asesores usan este mismo acceso.</p></div>
+
+        <label class="field">Correo institucional
+          <input id="login-correo" name="correo" type="email" autocomplete="username" inputmode="email" required>
+          <span class="field-error" id="login-correo-error"></span>
+        </label>
+
+        <label class="field">Contraseña
+          <span class="pass">
+            <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+            <button type="button" class="ver-pass" aria-controls="login-password" aria-pressed="false" aria-label="Mostrar contraseña"><i data-ic="eye"></i></button>
+          </span>
+          <span class="field-error" id="login-password-error"></span>
+        </label>
+
+        <p class="help bad form-error" role="alert"></p>
+        <button class="btn block" type="submit">Iniciar sesión</button>
+        <p class="acceso-cambio">¿Eres alumno y aún no tienes cuenta? <a href="#registro" data-ir="registro">Regístrate</a></p>
+      </form>
+
+      <!-- ============ REGISTRO DE ALUMNO ============ -->
+      <form class="form" id="panel-registro" role="tabpanel" aria-labelledby="tab-registro" novalidate hidden>
+        <div><h2>Crea tu cuenta de alumno</h2><p class="sub">Regístrate con tus datos de estadía.</p></div>
+
+        <label class="field">Nombre completo
+          <input id="reg-nombre" name="nombre" type="text" autocomplete="name" maxlength="120" required>
+          <span class="field-error" id="reg-nombre-error"></span>
+        </label>
+
+        <div class="form-fila">
+          <label class="field">Matrícula
+            <input id="reg-matricula" name="matricula" type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="10 dígitos" required>
+            <span class="field-error" id="reg-matricula-error"></span>
+          </label>
+          <fieldset class="field">
+            <legend>Nivel</legend>
+            <div class="opciones">
+              <label class="opcion"><input type="radio" name="nivel" value="TSU" required><span>TSU</span></label>
+              <label class="opcion"><input type="radio" name="nivel" value="Ingeniería"><span>Ingeniería</span></label>
+            </div>
+            <span class="field-error" id="reg-nivel-error"></span>
+          </fieldset>
+        </div>
+
+        <label class="field">Correo institucional
+          <input id="reg-correo" name="correo" type="email" autocomplete="email" inputmode="email" required>
+          <span class="field-error" id="reg-correo-error"></span>
+        </label>
+
+        <label class="field">Contraseña
+          <span class="pass">
+            <input id="reg-password" name="password" type="password" autocomplete="new-password" aria-describedby="reg-password-ayuda" required>
+            <button type="button" class="ver-pass" aria-controls="reg-password" aria-pressed="false" aria-label="Mostrar contraseña"><i data-ic="eye"></i></button>
+          </span>
+          <small id="reg-password-ayuda">Mínimo 8 caracteres, con letras y números.</small>
+          <span class="field-error" id="reg-password-error"></span>
+        </label>
+
+        <label class="field">Confirma tu contraseña
+          <input id="reg-confirmar" name="confirmar" type="password" autocomplete="new-password" required>
+          <span class="field-error" id="reg-confirmar-error"></span>
+        </label>
+
+        <p class="help bad form-error" role="alert"></p>
+        <button class="btn block" type="submit">Crear cuenta</button>
+        <p class="acceso-cambio">¿Ya tienes cuenta? <a href="#login" data-ir="login">Inicia sesión</a></p>
+      </form>
     </div>
-
-    <!-- ============ INICIAR SESIÓN ============ -->
-    <form class="vista" id="panel-login" role="tabpanel" aria-labelledby="tab-login" novalidate>
-      <h2>¡Hola de nuevo!</h2>
-      <p class="vista-sub">Entra con tu correo institucional y tu contraseña.</p>
-
-      <div class="campo">
-        <label for="login-correo">Correo institucional</label>
-        <input id="login-correo" name="correo" type="email" autocomplete="username" inputmode="email" required>
-        <p class="campo-error" id="login-correo-error"></p>
-      </div>
-
-      <div class="campo">
-        <label for="login-password">Contraseña</label>
-        <div class="campo-pass">
-          <input id="login-password" name="password" type="password" autocomplete="current-password" required>
-          <button class="ver-pass" type="button" aria-controls="login-password" aria-pressed="false" aria-label="Mostrar contraseña">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
-        </div>
-        <p class="campo-error" id="login-password-error"></p>
-      </div>
-
-      <p class="form-error" role="alert"></p>
-      <button class="btn-vivo" type="submit">Iniciar sesión</button>
-      <p class="vista-cambio">¿Aún no tienes cuenta? <a href="#registro" data-ir="registro">Regístrate aquí</a></p>
-    </form>
-
-    <!-- ============ REGISTRO ============ -->
-    <form class="vista" id="panel-registro" role="tabpanel" aria-labelledby="tab-registro" novalidate hidden>
-      <h2>Crea tu cuenta</h2>
-      <p class="vista-sub">Regístrate con tus datos de alumno.</p>
-
-      <div class="campo">
-        <label for="reg-nombre">Nombre completo</label>
-        <input id="reg-nombre" name="nombre" type="text" autocomplete="name" required maxlength="120">
-        <p class="campo-error" id="reg-nombre-error"></p>
-      </div>
-
-      <div class="campo-fila">
-        <div class="campo">
-          <label for="reg-matricula">Matrícula</label>
-          <input id="reg-matricula" name="matricula" type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="10 dígitos" required>
-          <p class="campo-error" id="reg-matricula-error"></p>
-        </div>
-
-        <fieldset class="campo">
-          <legend>Nivel</legend>
-          <div class="opciones">
-            <label class="opcion"><input type="radio" name="nivel" value="TSU" required><span>TSU</span></label>
-            <label class="opcion"><input type="radio" name="nivel" value="Ingeniería"><span>Ingeniería</span></label>
-          </div>
-          <p class="campo-error" id="reg-nivel-error"></p>
-        </fieldset>
-      </div>
-
-      <div class="campo">
-        <label for="reg-correo">Correo institucional</label>
-        <input id="reg-correo" name="correo" type="email" autocomplete="email" inputmode="email" required>
-        <p class="campo-error" id="reg-correo-error"></p>
-      </div>
-
-      <div class="campo">
-        <label for="reg-password">Contraseña</label>
-        <div class="campo-pass">
-          <input id="reg-password" name="password" type="password" autocomplete="new-password" aria-describedby="reg-password-ayuda" required>
-          <button class="ver-pass" type="button" aria-controls="reg-password" aria-pressed="false" aria-label="Mostrar contraseña">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
-        </div>
-        <p class="campo-ayuda" id="reg-password-ayuda">Mínimo 8 caracteres, con letras y números.</p>
-        <p class="campo-error" id="reg-password-error"></p>
-      </div>
-
-      <div class="campo">
-        <label for="reg-confirmar">Confirma tu contraseña</label>
-        <input id="reg-confirmar" name="confirmar" type="password" autocomplete="new-password" required>
-        <p class="campo-error" id="reg-confirmar-error"></p>
-      </div>
-
-      <p class="form-error" role="alert"></p>
-      <button class="btn-vivo" type="submit">Crear cuenta</button>
-      <p class="vista-cambio">¿Ya tienes cuenta? <a href="#login" data-ir="login">Inicia sesión</a></p>
-    </form>
-
-    <!-- ============ BIENVENIDA (sesión iniciada) ============ -->
-    <section class="vista bienvenida" id="panel-bienvenida" aria-labelledby="titulo-bienvenida" hidden>
-      <div class="avatar" id="bv-avatar" aria-hidden="true"></div>
-      <h2 id="titulo-bienvenida">¡Hola, <span id="bv-nombre"></span>!</h2>
-      <p class="vista-sub">Tu cuenta del Portal del alumno está activa.</p>
-
-      <div class="chips">
-        <span class="chip chip-violeta">Matrícula <b id="bv-matricula"></b></span>
-        <span class="chip chip-naranja" id="bv-nivel"></span>
-      </div>
-
-      <dl class="datos">
-        <div><dt>Correo</dt><dd id="bv-correo"></dd></div>
-        <div><dt>Registrado el</dt><dd id="bv-fecha"></dd></div>
-      </dl>
-
-      <p class="bienvenida-nota" id="bv-offline" hidden>Sin conexión: se muestran tus datos guardados.</p>
-      <p class="bienvenida-nota">Muy pronto aquí verás tu expediente, tus documentos y tus avisos.</p>
-
-      <button class="btn-borde" type="button" id="btn-salir">Cerrar sesión</button>
-    </section>
-  </div>
-</main>
+  </main>
+</div>
 
 <!-- Zona de avisos emergentes (la llena js/toast.js) -->
 <div class="toast-region" id="toast-region" role="status" aria-live="polite"></div>

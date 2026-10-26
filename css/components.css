@@ -43,16 +43,15 @@
   box-shadow: var(--shadow-lg);
 }
 
-/* Botón hacia el Portal del alumno, con la paleta vibrante del portal */
+/* Botón hacia el Portal del alumno, con el azul marino del diseño SIGEP UTP */
 .btn-vivo-portal {
-  background: linear-gradient(100deg, #7c3aed 0%, #db2777 55%, #f97316 100%);
-  background-size: 160% 100%;
-  color: #fff;
-  box-shadow: 0 12px 24px -12px rgba(219, 39, 119, .8);
+  background: var(--sigep);
+  color: var(--on-sigep);
+  box-shadow: var(--shadow);
 }
 
 .btn-vivo-portal:hover {
-  background-position: 100% 0;
+  filter: brightness(1.25);
   transform: translateY(-1px);
 }
 

@@ -62,6 +62,12 @@ security definer
 set search_path = ''
 as $$
 begin
+  -- Solo las cuentas creadas desde el formulario de registro traen matrícula.
+  -- Las demás (por ejemplo, asesores creados en el panel de Supabase) se omiten.
+  if coalesce(new.raw_user_meta_data ->> 'matricula', '') = '' then
+    return new;
+  end if;
+
   insert into public.alumnos (id, matricula, nombre, correo, nivel)
   values (
     new.id,

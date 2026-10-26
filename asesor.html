@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Revisión de tesinas · SIGEP UTP</title>
+  <meta name="description" content="Panel del asesor: revisa las versiones de la tesina de tus alumnos y deja observaciones.">
+  <meta name="color-scheme" content="light dark">
+
+  <!-- Aplicación web progresiva -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#13213F">
+  <meta name="apple-mobile-web-app-title" content="Estadías">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+  <!-- Diseño común SIGEP UTP (misma URL de tipografías que sw.js) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" crossorigin href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+  <link rel="stylesheet" href="css/sigep.css">
+  <link rel="stylesheet" href="css/portal.css">
+
+  <!-- Comportamiento -->
+  <script src="js/sigep.js" defer></script>
+  <script src="js/vendor/supabase.js" defer></script>
+  <script src="js/config.js" defer></script>
+  <script src="js/toast.js" defer></script>
+  <script src="js/cache-api.js" defer></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/tesina.js" defer></script>
+  <script src="js/panel.js" defer></script>
+  <script src="js/asesor.js" defer></script>
+  <script src="js/pwa.js" defer></script>
+</head>
+<body data-modulo="4">
+<a class="skip" href="#contenido">Saltar al contenido</a>
+
+<div class="shell">
+  <!-- ================= MENÚ LATERAL ================= -->
+  <aside class="side">
+    <div class="side-head"><a class="logo" href="#alumnos"><span class="logo-mark"><i data-ic="cap" data-s="20"></i></span><span><b>SIGEP UTP</b><small>Gestión de Estadías</small></span></a></div>
+    <div class="module-pill"><span class="n">4</span><span><small>Módulo 4</small>Revisión de tesinas</span></div>
+    <div class="side-label">Menú</div>
+    <nav class="side-nav" aria-label="Menú del asesor">
+      <a href="#alumnos"><i data-ic="users"></i>Mis alumnos<span class="count" id="cuenta-alumnos">0</span></a>
+      <a href="#revisar"><i data-ic="clipboard"></i>Por revisar<span class="count alert" id="cuenta-revisar" hidden></span></a>
+      <a href="#" class="pronto" data-nombre="Citas de asesoría"><i data-ic="calendar"></i>Citas de asesoría<span class="count">Pronto</span></a>
+      <a href="#perfil"><i data-ic="user"></i>Mi perfil</a>
+    </nav>
+    <div class="side-foot">
+      <a href="./"><i data-ic="arrowL"></i>Portal SIGEP</a>
+      <button class="side-out" type="button"><i data-ic="logout"></i>Cerrar sesión</button>
+    </div>
+  </aside>
+  <div class="scrim"></div>
+
+  <div class="main">
+    <!-- ================= BARRA SUPERIOR ================= -->
+    <header class="topbar">
+      <button class="burger" type="button" aria-label="Abrir menú"><i data-ic="menu"></i></button>
+      <div class="crumb">SIGEP UTP / Módulo 4 / <b id="crumb-actual">Mis alumnos</b></div>
+      <div class="top-actions">
+        <span class="chip warn estado-red" id="estado-red">Sin conexión</span>
+        <a class="icon-btn" href="#revisar" aria-label="Versiones por revisar" title="Versiones por revisar"><i data-ic="bell"></i><span class="dot" id="dot-revisar" hidden></span></a>
+        <span class="avatar solid" id="avatar" aria-hidden="true">··</span>
+      </div>
+    </header>
+
+    <main class="content" id="contenido" tabindex="-1">
+
+      <!-- ================= MIS ALUMNOS ================= -->
+      <section class="vista" data-vista="alumnos" data-titulo="Mis alumnos" aria-labelledby="t-alumnos">
+        <div class="page-h">
+          <div><h1 id="t-alumnos">Mis alumnos</h1><p class="sub" id="alumnos-sub">Cargando…</p></div>
+          <a class="btn" href="#revisar"><i data-ic="clipboard"></i>Revisar entregas</a>
+        </div>
+        <p class="help warn" id="aviso-cache" hidden></p>
+        <div class="stats" id="alumnos-stats"></div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th>Alumno</th><th>Nivel</th><th>Versiones</th><th>Última versión</th><th></th></tr></thead>
+            <tbody id="tabla-alumnos"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= POR REVISAR ================= -->
+      <section class="vista" data-vista="revisar" data-titulo="Por revisar" aria-labelledby="t-revisar" hidden>
+        <div class="page-h"><div><h1 id="t-revisar">Por revisar</h1><p class="sub">Versiones de tesina que esperan tus observaciones.</p></div></div>
+        <div class="card"><div class="rows" id="lista-revisar"></div></div>
+      </section>
+
+      <!-- ================= DETALLE DE UN ALUMNO (#alumno/<id>) ================= -->
+      <section class="vista" data-vista="alumno" data-menu="alumnos" data-titulo="Tesina del alumno" aria-labelledby="t-alumno" hidden>
+        <a class="btn out sm" href="#alumnos" style="margin-bottom:14px"><i data-ic="arrowL" data-s="16"></i>Mis alumnos</a>
+        <div class="page-h"><div><h1 id="t-alumno">Alumno</h1><p class="sub" id="alumno-sub"></p></div></div>
+        <div class="help"><i data-ic="info"></i><span>Descarga cada versión, escribe tus observaciones y, si corresponde, márcala como <b>Aprobada</b> o <b>Requiere corrección</b>. El alumno las verá en su portal.</span></div>
+        <ul class="versiones" id="alumno-versiones"></ul>
+      </section>
+
+      <!-- ================= MI PERFIL ================= -->
+      <section class="vista" data-vista="perfil" data-titulo="Mi perfil" aria-labelledby="t-perfil" hidden>
+        <div class="page-h"><div><h1 id="t-perfil">Mi perfil</h1><p class="sub">Tus datos de asesor.</p></div></div>
+        <div class="stack">
+          <div class="card" id="perfil-detalle"></div>
+          <div class="card">
+            <div class="card-h"><h2>Datos guardados en este dispositivo</h2><span class="chip info">Cache API</span></div>
+            <p class="small muted" style="margin-bottom:10px">Los datos de tus alumnos se guardan en la caché del navegador para consultarlos sin conexión. Se borran al cerrar sesión.</p>
+            <div id="panel-cache"></div>
+            <div class="toolbar" style="margin:14px 0 0">
+              <button class="btn out sm" type="button" id="btn-actualizar"><i data-ic="history" data-s="16"></i>Actualizar datos</button>
+              <button class="btn danger sm" type="button" id="btn-borrar-cache"><i data-ic="trash" data-s="16"></i>Borrar datos guardados</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Zona de avisos emergentes (la llena js/toast.js) -->
+<div class="toast-region" id="toast-region" role="status" aria-live="polite"></div>
+</body>
+</html>

@@ -11,20 +11,25 @@
    · Video: primero la caché, respondiendo las peticiones parciales (Range)
      que usan los reproductores.
    · Tipografías de Google Fonts: se guardan la primera vez y se reutilizan.
+   · Respuestas de la API (Supabase): las guarda la página en "estadias-api"
+     (js/cache-api.js); aquí solo se protege esa caché para no borrarla.
 
    Al agregar, quitar o renombrar archivos, actualiza PRECACHE y sube
    VERSION: el navegador instalará el service worker nuevo y borrará la
    caché anterior.
    ========================================================================== */
 
-const VERSION = 'v2';
+const VERSION = 'v4';
 const STATIC_CACHE = `estadias-${VERSION}`;
 const FONT_CACHE = 'estadias-fuentes';
+const API_CACHE = 'estadias-api'; // la llena js/cache-api.js
 
 // Rutas relativas a este archivo (funciona también en una subcarpeta)
 const PRECACHE = [
   './',
   'portal.html',
+  'alumno.html',
+  'asesor.html',
   'offline.html',
   'manifest.webmanifest',
   'css/variables.css',
@@ -32,13 +37,20 @@ const PRECACHE = [
   'css/layout.css',
   'css/components.css',
   'css/responsive.css',
+  'css/sigep.css',
   'css/portal.css',
+  'js/sigep.js',
   'js/toast.js',
   'js/navigation.js',
   'js/pwa.js',
   'js/config.js',
+  'js/cache-api.js',
   'js/auth.js',
+  'js/tesina.js',
+  'js/panel.js',
   'js/portal.js',
+  'js/alumno.js',
+  'js/asesor.js',
   'js/vendor/supabase.js',
   'icons/icon.svg',
   'icons/favicon-32.png',
@@ -52,8 +64,13 @@ const PRECACHE = [
   'media/recorrido-estadias.mp4',
 ];
 
-// Debe ser idéntica a la URL de <link rel="stylesheet"> en index.html
-const FONT_CSS = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&display=swap';
+// Deben ser idénticas a las URL de <link rel="stylesheet"> de las páginas:
+// la primera la usan index.html y offline.html; la segunda, el diseño SIGEP
+// (portal.html, alumno.html y asesor.html).
+const FONT_CSS = [
+  'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&display=swap',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap',
+];
 const FONT_ORIGINS = ['https://fonts.googleapis.com', 'https://fonts.gstatic.com'];
 
 /* ==========================================================================
@@ -73,7 +90,7 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
-    const keep = [STATIC_CACHE, FONT_CACHE];
+    const keep = [STATIC_CACHE, FONT_CACHE, API_CACHE];
     const names = await caches.keys();
     await Promise.all(names.filter((name) => !keep.includes(name)).map((name) => caches.delete(name)));
     // Toma el control de las pestañas abiertas desde ya
@@ -217,14 +234,17 @@ async function fromFontCache(event) {
 /** Descarga la hoja de Google Fonts y sus archivos del subconjunto latino. */
 async function precacheFonts() {
   const cache = await caches.open(FONT_CACHE);
-  const response = await fetch(FONT_CSS, { mode: 'cors' });
-  if (!response.ok) return;
 
-  await cache.put(FONT_CSS, response.clone());
+  // Cada hoja se descarga por separado: si una falla, la otra se guarda igual
+  await Promise.allSettled(FONT_CSS.map(async (url) => {
+    const response = await fetch(url, { mode: 'cors' });
+    if (!response.ok) return;
+    await cache.put(url, response.clone());
 
-  // Cada bloque @font-face va precedido de un comentario con su subconjunto,
-  // p. ej. /* latin */. El español solo necesita "latin".
-  const css = await response.text();
-  const files = [...css.matchAll(/\/\*\s*latin\s*\*\/[^}]*?url\((https:[^)]+)\)/g)].map((m) => m[1]);
-  await cache.addAll([...new Set(files)]);
+    // Cada bloque @font-face va precedido de un comentario con su subconjunto,
+    // p. ej. /* latin */. El español solo necesita "latin".
+    const css = await response.text();
+    const files = [...css.matchAll(/\/\*\s*latin\s*\*\/[^}]*?url\((https:[^)]+)\)/g)].map((m) => m[1]);
+    await cache.addAll([...new Set(files)]);
+  }));
 }

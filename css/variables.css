@@ -19,6 +19,10 @@
   --brand-deep: #0a544c;
   --on-brand: #ffffff;
 
+  /* ---------- Acceso al portal (azul marino del diseño SIGEP UTP) ---------- */
+  --sigep: #13213f;
+  --on-sigep: #ffffff;
+
   /* ---------- Texto ---------- */
   --ink: #16302f;          /* títulos y texto principal */
   --ink-2: #2e4a47;        /* texto de listas y tarjetas */

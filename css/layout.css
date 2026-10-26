@@ -116,19 +116,18 @@
   color: var(--accent-deep);
 }
 
-/* Acceso al Portal del alumno: usa el degradado vibrante del portal */
+/* Acceso al Portal del alumno: azul marino del diseño SIGEP UTP */
 .portal-btn {
   border-color: transparent;
-  background: linear-gradient(100deg, #7c3aed, #db2777);
-  color: #fff;
+  background: var(--sigep);
+  color: var(--on-sigep);
   text-decoration: none;
-  box-shadow: 0 6px 14px -8px rgba(219, 39, 119, .9);
 }
 
 .portal-btn:hover {
   border-color: transparent;
-  color: #fff;
-  filter: brightness(1.08);
+  color: var(--on-sigep);
+  filter: brightness(1.25);
 }
 
 /* En teléfono los botones solo muestran el ícono; el texto sigue

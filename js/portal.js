@@ -5,6 +5,8 @@
    2. Validación de los formularios con mensajes en español.
    3. Inicio de sesión: lleva a alumno.html o asesor.html según el rol.
    4. Registro de alumnos.
+   5. Recuperación de contraseña: pedir el enlace por correo (#recuperar) y,
+      al volver de ese enlace, crear la contraseña nueva (#nueva).
    Depende de toast.js, cache-api.js y auth.js.
    ========================================================================== */
 (() => {
@@ -12,20 +14,28 @@
 
   const { auth, toast } = window.App;
   const DESTINO = { alumno: 'alumno.html', asesor: 'asesor.html' };
+  const PREFIJO = { 'panel-login': 'login', 'panel-registro': 'reg', 'panel-recuperar': 'rec', 'panel-nueva': 'nueva' };
 
   const tabs = { login: document.getElementById('tab-login'), registro: document.getElementById('tab-registro') };
-  const paneles = { login: document.getElementById('panel-login'), registro: document.getElementById('panel-registro') };
+  const paneles = {
+    login: document.getElementById('panel-login'),
+    registro: document.getElementById('panel-registro'),
+    recuperar: document.getElementById('panel-recuperar'),
+    nueva: document.getElementById('panel-nueva'),
+  };
   const tablist = document.getElementById('tabs');
 
-  /* ---------- 1. Pestañas ---------- */
+  /* ---------- 1. Pestañas y vistas ---------- */
   function mostrar(vista, { enfocar = false } = {}) {
     Object.entries(paneles).forEach(([nombre, panel]) => { panel.hidden = nombre !== vista; });
+    // Las pestañas solo se ven en «Iniciar sesión» y «Registrarme»
+    tablist.hidden = !tabs[vista];
     Object.entries(tabs).forEach(([nombre, tab]) => {
       const activa = nombre === vista;
       tab.setAttribute('aria-selected', String(activa));
       tab.tabIndex = activa ? 0 : -1;
     });
-    if (location.hash !== `#${vista}`) history.replaceState(null, '', `#${vista}`);
+    if (location.hash !== `#${vista}` || location.search) history.replaceState(null, '', `${location.pathname}#${vista}`);
     if (enfocar) paneles[vista].querySelector('input')?.focus();
   }
 
@@ -41,7 +51,7 @@
     mostrar(a.dataset.ir, { enfocar: true });
   }));
   window.addEventListener('hashchange', () => {
-    if (location.hash === '#registro' || location.hash === '#login') mostrar(location.hash.slice(1));
+    if (['#registro', '#login', '#recuperar'].includes(location.hash)) mostrar(location.hash.slice(1));
   });
 
   // Mostrar u ocultar la contraseña
@@ -67,8 +77,7 @@
 
   function marcar(form, campo, mensaje) {
     const input = form.elements[campo];
-    const prefijo = form.id === 'panel-login' ? 'login' : 'reg';
-    const error = document.getElementById(`${prefijo}-${campo}-error`);
+    const error = document.getElementById(`${PREFIJO[form.id]}-${campo}-error`);
     if (error) error.textContent = mensaje;
     const nodos = input instanceof RadioNodeList ? [...input] : [input];
     nodos.forEach((n) => n.setAttribute('aria-invalid', String(Boolean(mensaje))));
@@ -170,15 +179,83 @@
     }
   });
 
+  /* ---------- 5. Recuperación de contraseña ---------- */
+  paneles.recuperar.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    errorGeneral(form, '');
+    document.getElementById('rec-enviado').hidden = true;
+    if (!validar(form, [['correo', REGLAS.correo]])) return;
+
+    enviando(form, true, 'Enviando…');
+    try {
+      await auth.recuperarContrasena(form.elements.correo.value.trim().toLowerCase());
+      document.getElementById('rec-enviado').hidden = false;
+      form.querySelector('button[type="submit"]').dataset.texto = 'Volver a enviar el enlace';
+    } catch (error) {
+      errorGeneral(form, error.message);
+    } finally {
+      enviando(form, false);
+    }
+  });
+
+  paneles.nueva.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    errorGeneral(form, '');
+    const valido = validar(form, [['password', REGLAS.password]]);
+    const errConfirmar = marcar(form, 'confirmar',
+      form.elements.password.value === form.elements.confirmar.value ? '' : 'Las contraseñas no coinciden.');
+    if (!valido) return;
+    if (errConfirmar) { errConfirmar.focus(); return; }
+
+    enviando(form, true, 'Guardando…');
+    try {
+      const rol = await auth.establecerContrasena(form.elements.password.value);
+      toast.show('Contraseña actualizada.');
+      await irAlPanel(rol);
+    } catch (error) {
+      errorGeneral(form, error.message);
+      enviando(form, false);
+    }
+  });
+
+  // ¿Se abrió el portal desde el enlace del correo de recuperación?
+  function leerRecuperacion() {
+    const consulta = new URLSearchParams(location.search);
+    const hash = new URLSearchParams(location.hash.slice(1));
+    const viene = consulta.has('recuperar') || hash.get('type') === 'recovery';
+    if (!viene) return null;
+    return { error: hash.get('error_description') || consulta.get('error_description') };
+  }
+
+  async function atenderRecuperacion({ error }) {
+    // getSession() espera a que Supabase lea los datos del enlace antes de seguir
+    const { data } = await auth.cliente.auth.getSession();
+    if (error || !data.session) {
+      mostrar('recuperar');
+      errorGeneral(paneles.recuperar, 'El enlace de recuperación ya venció o ya se usó. Solicita uno nuevo.');
+      return;
+    }
+    mostrar('nueva', { enfocar: true });
+  }
+
   /* ---------- Arranque ---------- */
   async function iniciar() {
-    mostrar(location.hash === '#registro' ? 'registro' : 'login');
-
     if (!auth.configurado) {
+      mostrar(location.hash === '#registro' ? 'registro' : 'login');
       document.getElementById('aviso-config').hidden = false;
       document.querySelectorAll('.form button[type="submit"]').forEach((b) => { b.disabled = true; });
       return;
     }
+
+    // Debe revisarse antes de tocar la dirección: ahí vienen los datos del enlace
+    const recuperacion = leerRecuperacion();
+    if (recuperacion) { await atenderRecuperacion(recuperacion); return; }
+    auth.alRecuperar(() => mostrar('nueva', { enfocar: true }));
+
+    const inicial = location.hash.slice(1);
+    mostrar(['registro', 'recuperar'].includes(inicial) ? inicial : 'login');
 
     // Si ya hay una sesión, se va directo a su panel
     try {

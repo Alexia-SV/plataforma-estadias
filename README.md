@@ -134,6 +134,47 @@ En **SQL Editor**, ejecuta en este orden (los dos se pueden volver a ejecutar):
 El asesor entra por `portal.html` con su correo y contraseña, y el portal lo lleva a su
 panel. Estas dos funciones solo se pueden ejecutar desde el SQL Editor.
 
+## Datos de prueba
+
+Para que el portal tenga contenido de demostración: **10 cuentas** (8 alumnos y 2 asesores),
+**12 versiones** de tesina en PDF y **10 observaciones**, en todos los estados.
+Las tesinas son PDF reales de 3 o 4 páginas (portada, índice, capítulos, tablas y
+referencias) guardados en `supabase/datos-prueba/`, con datos ficticios.
+
+1. En **SQL Editor**, ejecuta `supabase/datos-prueba.sql` (crea las cuentas y las asigna).
+2. En una terminal, desde la carpeta del proyecto: `node supabase/sembrar-datos-prueba.mjs`
+   (sube las versiones y las observaciones; no necesita instalar nada).
+3. En **SQL Editor**, ejecuta `supabase/fechas-datos-prueba.sql`: reparte las entregas y
+   observaciones entre el 14 de septiembre y el 19 de octubre de 2026, las mismas fechas
+   que trae la portada de cada PDF.
+
+| Cuenta | Rol | Situación |
+| --- | --- | --- |
+| `prueba.asesor1@sigep-pruebas.mx` | Asesora (Dra. Mariana Torres) | Alumnos 01 a 04 |
+| `prueba.asesor2@sigep-pruebas.mx` | Asesor (Mtro. Ricardo Vega) | Alumnos 05 a 07 |
+| `prueba.alumno01@…` a `prueba.alumno07@…` | Alumnos | Versiones aprobadas, en revisión y con correcciones (el 04, sin entregas) |
+| `prueba.alumno08@sigep-pruebas.mx` | Alumno | Sin asesor y sin entregas |
+
+Todas usan la contraseña **Prueba2026**. Se pueden volver a ejecutar sin duplicar nada.
+Para quitarlas, ejecuta `supabase/borrar-datos-prueba.sql` y borra en **Storage → tesinas**
+las carpetas que lista.
+
+## Contraseñas
+
+- **Cambiar la contraseña:** en **Mi perfil** (alumno o asesor), con la contraseña actual.
+- **¿Olvidaste tu contraseña?:** en `portal.html` se pide un enlace por correo; al abrirlo,
+  el portal pide la contraseña nueva y entra directo al panel. Requisitos en Supabase:
+  - En **Authentication → URL Configuration → Redirect URLs**, agrega
+    `https://alexia-sv.github.io/plataforma-estadias/portal.html`.
+  - El servicio de correo incluido en Supabase **solo envía a los integrantes del equipo del
+    proyecto** y unos pocos correos por hora. Para que les llegue a los alumnos, configura un
+    servicio propio en **Authentication → Emails → SMTP Settings** (por ejemplo, Resend o Brevo).
+- **Restablecer desde el SQL Editor** (cuando no llega el correo):
+
+  ```sql
+  select restablecer_contrasena('correo@utpuebla.edu.mx', 'NuevaClave2026');
+  ```
+
 ## Caché (Cache API)
 
 El sitio usa tres cachés de Cache Storage:

@@ -146,6 +146,13 @@
 
 .acceso-card .tabs button { flex: 1; }
 
+.olvido {
+  justify-self: end;
+  margin-top: -6px;
+  font-size: .84rem;
+  font-weight: 600;
+}
+
 .acceso-cambio {
   margin-top: 14px;
   color: var(--muted);

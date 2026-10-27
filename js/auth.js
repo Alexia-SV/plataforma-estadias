@@ -12,6 +12,10 @@
      obtenerPerfilAsesor()     datos del asesor desde la API (y los guarda en caché)
      perfilGuardado(clave)     datos guardados en la caché "estadias-api"
      cerrarSesion()            cierra la sesión y borra la caché de la API
+     cambiarContrasena(a, n)   comprueba la contraseña actual y pone la nueva
+     recuperarContrasena(c)    envía el correo con el enlace de recuperación
+     establecerContrasena(n)   pone la contraseña nueva al volver de ese enlace
+     alRecuperar(fn)           avisa cuando se abre el portal desde ese enlace
      error(e)                  convierte un error de Supabase en un mensaje en español
    Depende de js/vendor/supabase.js, js/config.js y js/cache-api.js.
    ========================================================================== */
@@ -58,6 +62,15 @@ App.auth = (() => {
     }
     if (codigo === 'weak_password' || m.includes('password should')) {
       return 'La contraseña es muy débil. Usa al menos 8 caracteres con letras y números.';
+    }
+    if (codigo === 'same_password' || m.includes('should be different')) {
+      return 'La contraseña nueva debe ser distinta a la actual.';
+    }
+    if (codigo === 'email_address_not_authorized' || m.includes('not authorized')) {
+      return 'No se pudo enviar el correo de recuperación. Pide a la coordinación de estadías que restablezca tu contraseña.';
+    }
+    if (codigo === 'otp_expired' || m.includes('email link is invalid') || m.includes('invalid flow state')) {
+      return 'El enlace de recuperación ya venció o ya se usó. Solicita uno nuevo.';
     }
     if (codigo.includes('rate_limit') || m.includes('rate limit')) {
       return 'Demasiados intentos seguidos. Espera unos minutos y vuelve a intentarlo.';
@@ -214,8 +227,47 @@ App.auth = (() => {
     }
   }
 
+  /* ---------- Contraseña ---------- */
+  async function cambiarContrasena(actual, nueva) {
+    exigirConexion();
+    const { data } = await cliente.auth.getSession();
+    const correo = data.session?.user.email;
+    if (!correo) throw new Error('Tu sesión terminó. Vuelve a iniciar sesión.');
+
+    // Se confirma que quien cambia la contraseña conoce la actual
+    const verificacion = await cliente.auth.signInWithPassword({ email: correo, password: actual });
+    if (verificacion.error) {
+      throw new Error(verificacion.error.code === 'invalid_credentials'
+        ? 'La contraseña actual no es correcta.' : traducir(verificacion.error));
+    }
+
+    const { error: e } = await cliente.auth.updateUser({ password: nueva });
+    if (e) throw error(e);
+  }
+
+  async function recuperarContrasena(correo) {
+    exigirConexion();
+    // Al abrir el enlace del correo, Supabase regresa a portal.html con la sesión de recuperación
+    const destino = new URL('portal.html?recuperar=1', location.href).href;
+    const { error: e } = await cliente.auth.resetPasswordForEmail(correo, { redirectTo: destino });
+    if (e) throw error(e);
+  }
+
+  async function establecerContrasena(nueva) {
+    exigirConexion();
+    const { error: e } = await cliente.auth.updateUser({ password: nueva });
+    if (e) throw error(e);
+    return rol();
+  }
+
+  function alRecuperar(fn) {
+    if (!cliente) return;
+    cliente.auth.onAuthStateChange((evento) => { if (evento === 'PASSWORD_RECOVERY') fn(); });
+  }
+
   return {
     configurado, cliente, registrar, iniciarSesion, rol, usuarioId,
     obtenerPerfil, obtenerPerfilAsesor, perfilGuardado, cerrarSesion, error,
+    cambiarContrasena, recuperarContrasena, establecerContrasena, alRecuperar,
   };
 })();

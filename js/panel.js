@@ -201,6 +201,82 @@ App.panel = (() => {
   window.addEventListener('offline', pintarRed);
   pintarRed();
 
+  /* ---------- Cambiar contraseña (Mi perfil) ---------- */
+  const PASS_VALIDA = (v) => v.length >= 8 && /[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(v) && /\d/.test(v);
+
+  function campoPass(nombre, etiqueta, autocompletar, ayuda = '') {
+    return `
+      <label class="field">${etiqueta}
+        <span class="pass">
+          <input name="${nombre}" type="password" autocomplete="${autocompletar}" required>
+          <button type="button" class="ver-pass" aria-pressed="false" aria-label="Mostrar contraseña"><i data-ic="eye"></i></button>
+        </span>
+        ${ayuda ? `<small>${ayuda}</small>` : ''}
+        <span class="field-error" data-error="${nombre}"></span>
+      </label>`;
+  }
+
+  function montarCambioContrasena(contenedor) {
+    App.ui.pintar(contenedor, `
+      <form class="form" novalidate>
+        ${campoPass('actual', 'Contraseña actual', 'current-password')}
+        <div class="form-fila">
+          ${campoPass('nueva', 'Contraseña nueva', 'new-password', 'Mínimo 8 caracteres, con letras y números.')}
+          ${campoPass('confirmar', 'Confirma la contraseña nueva', 'new-password')}
+        </div>
+        <p class="help bad form-error" role="alert"></p>
+        <div><button class="btn sm" type="submit"><i data-ic="key" data-s="16"></i>Cambiar contraseña</button></div>
+      </form>`);
+
+    const form = contenedor.querySelector('form');
+    const error = (campo, mensaje) => {
+      form.querySelector(`[data-error="${campo}"]`).textContent = mensaje;
+      form.elements[campo].setAttribute('aria-invalid', String(Boolean(mensaje)));
+      return mensaje ? form.elements[campo] : null;
+    };
+
+    form.querySelectorAll('.ver-pass').forEach((boton) => boton.addEventListener('click', (e) => {
+      e.preventDefault();
+      const input = boton.previousElementSibling;
+      const visible = input.type === 'password';
+      input.type = visible ? 'text' : 'password';
+      boton.setAttribute('aria-pressed', String(visible));
+      boton.setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    }));
+    form.querySelectorAll('input').forEach((i) => i.addEventListener('input', () => error(i.name, '')));
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const { actual, nueva, confirmar } = form.elements;
+      form.querySelector('.form-error').textContent = '';
+      const primero = [
+        error('actual', actual.value ? '' : 'Escribe tu contraseña actual.'),
+        error('nueva', !PASS_VALIDA(nueva.value) ? 'Usa al menos 8 caracteres, con letras y números.'
+          : nueva.value === actual.value ? 'La contraseña nueva debe ser distinta a la actual.' : ''),
+        error('confirmar', nueva.value === confirmar.value ? '' : 'Las contraseñas no coinciden.'),
+      ].find(Boolean);
+      if (primero) { primero.focus(); return; }
+
+      const boton = form.querySelector('button[type="submit"]');
+      const original = boton.innerHTML;
+      boton.disabled = true;
+      boton.innerHTML = '<span class="cargando" aria-hidden="true"></span>Guardando…';
+      try {
+        await auth.cambiarContrasena(actual.value, nueva.value);
+        form.reset();
+        toast.show('Tu contraseña se cambió correctamente.');
+      } catch (err) {
+        if (err.message.startsWith('La contraseña actual')) { error('actual', err.message); actual.focus(); }
+        else form.querySelector('.form-error').textContent = err.message;
+      } finally {
+        boton.disabled = false;
+        boton.innerHTML = original;
+      }
+    });
+  }
+
+  document.querySelectorAll('[data-cambiar-contrasena]').forEach(montarCambioContrasena);
+
   /* ---------- Usuario en la barra superior ---------- */
   function usuario(nombre) {
     const avatar = document.getElementById('avatar');

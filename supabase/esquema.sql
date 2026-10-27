@@ -103,3 +103,40 @@ $$;
 
 revoke all on function public.matricula_disponible(text) from public;
 grant execute on function public.matricula_disponible(text) to anon, authenticated;
+
+-- --------------------------------------------------------------------------
+-- 5. Administración: poner una contraseña nueva a una cuenta
+--    Para cuando un alumno o asesor la olvida y no le llega el correo de
+--    recuperación. Se ejecuta solo desde el SQL Editor de Supabase:
+--      select restablecer_contrasena('correo@utpuebla.edu.mx', 'NuevaClave2026');
+-- --------------------------------------------------------------------------
+create or replace function public.restablecer_contrasena(p_correo text, p_nueva text)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_id uuid;
+begin
+  if p_nueva is null or char_length(p_nueva) < 8
+     or p_nueva !~ '[A-Za-zÁÉÍÓÚáéíóúÑñ]' or p_nueva !~ '[0-9]' then
+    raise exception 'La contraseña debe tener al menos 8 caracteres, con letras y números.';
+  end if;
+
+  update auth.users
+     set encrypted_password = extensions.crypt(p_nueva, extensions.gen_salt('bf')),
+         updated_at = now()
+   where lower(email) = lower(trim(p_correo))
+  returning id into v_id;
+
+  if v_id is null then
+    raise exception 'No existe una cuenta con el correo %.', p_correo;
+  end if;
+
+  return format('Listo: se cambió la contraseña de %s.', lower(trim(p_correo)));
+end;
+$$;
+
+-- Solo el administrador (SQL Editor) puede ejecutarla
+revoke all on function public.restablecer_contrasena(text, text) from public, anon, authenticated;

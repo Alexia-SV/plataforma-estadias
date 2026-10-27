@@ -76,6 +76,7 @@
           </span>
           <span class="field-error" id="login-password-error"></span>
         </label>
+        <a class="olvido" href="#recuperar" data-ir="recuperar">¿Olvidaste tu contraseña?</a>
 
         <p class="help bad form-error" role="alert"></p>
         <button class="btn block" type="submit">Iniciar sesión</button>
@@ -128,6 +129,43 @@
         <p class="help bad form-error" role="alert"></p>
         <button class="btn block" type="submit">Crear cuenta</button>
         <p class="acceso-cambio">¿Ya tienes cuenta? <a href="#login" data-ir="login">Inicia sesión</a></p>
+      </form>
+
+      <!-- ============ RECUPERAR CONTRASEÑA (paso 1: pedir el correo) ============ -->
+      <form class="form" id="panel-recuperar" novalidate hidden aria-labelledby="t-recuperar">
+        <div><h2 id="t-recuperar">Recupera tu contraseña</h2><p class="sub">Escribe tu correo institucional y te enviaremos un enlace para crear una contraseña nueva.</p></div>
+
+        <label class="field">Correo institucional
+          <input id="rec-correo" name="correo" type="email" autocomplete="username" inputmode="email" required>
+          <span class="field-error" id="rec-correo-error"></span>
+        </label>
+
+        <p class="help ok" id="rec-enviado" role="status" hidden><i data-ic="mail"></i><span>Listo. Si el correo está registrado, te llegará un enlace en unos minutos (revisa también la carpeta de spam). Si no te llega, pide a la coordinación de estadías que restablezca tu contraseña.</span></p>
+        <p class="help bad form-error" role="alert"></p>
+        <button class="btn block" type="submit">Enviar enlace</button>
+        <p class="acceso-cambio"><a href="#login" data-ir="login">Volver a iniciar sesión</a></p>
+      </form>
+
+      <!-- ============ RECUPERAR CONTRASEÑA (paso 2: al abrir el enlace del correo) ============ -->
+      <form class="form" id="panel-nueva" novalidate hidden aria-labelledby="t-nueva">
+        <div><h2 id="t-nueva">Crea tu contraseña nueva</h2><p class="sub">Escríbela dos veces. Después entrarás directamente a tu panel.</p></div>
+
+        <label class="field">Contraseña nueva
+          <span class="pass">
+            <input id="nueva-password" name="password" type="password" autocomplete="new-password" aria-describedby="nueva-password-ayuda" required>
+            <button type="button" class="ver-pass" aria-controls="nueva-password" aria-pressed="false" aria-label="Mostrar contraseña"><i data-ic="eye"></i></button>
+          </span>
+          <small id="nueva-password-ayuda">Mínimo 8 caracteres, con letras y números.</small>
+          <span class="field-error" id="nueva-password-error"></span>
+        </label>
+
+        <label class="field">Confirma tu contraseña nueva
+          <input id="nueva-confirmar" name="confirmar" type="password" autocomplete="new-password" required>
+          <span class="field-error" id="nueva-confirmar-error"></span>
+        </label>
+
+        <p class="help bad form-error" role="alert"></p>
+        <button class="btn block" type="submit">Guardar contraseña</button>
       </form>
     </div>
   </main>

@@ -181,7 +181,7 @@ El sitio usa tres cachés de Cache Storage:
 
 | Caché | Quién la llena | Contenido | Estrategia |
 | --- | --- | --- | --- |
-| `estadias-v4` | `sw.js` | Páginas, CSS, JS, íconos, imágenes y video | Precarga + primero la red (el video, primero la caché) |
+| `estadias-v5` | `sw.js` | Páginas, CSS, JS, íconos, imágenes y video | Precarga + primero la red (el video, primero la caché) |
 | `estadias-fuentes` | `sw.js` | Tipografías de Google Fonts | Primero la caché |
 | `estadias-api` | `js/cache-api.js` | Respuestas de la API: perfil, rol, versiones de la tesina, asesor y alumnos del asesor | Stale-while-revalidate |
 

@@ -19,7 +19,7 @@
    caché anterior.
    ========================================================================== */
 
-const VERSION = 'v4';
+const VERSION = 'v5';
 const STATIC_CACHE = `estadias-${VERSION}`;
 const FONT_CACHE = 'estadias-fuentes';
 const API_CACHE = 'estadias-api'; // la llena js/cache-api.js

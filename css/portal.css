@@ -573,12 +573,38 @@ fieldset.field legend { padding: 0; margin-bottom: 6px; }
   .acceso-info .acceso-puntos, .acceso-info p { display: none; }
   .acceso-volver { margin-top: 0; }
   .acceso-main { place-items: start center; padding: 20px 16px 40px; }
+
+  /* Menú lateral: 100vh mide la pantalla sin la barra del navegador y deja
+     «Cerrar sesión» debajo de ella; dvh usa el alto que de verdad se ve. */
+  .side {
+    height: auto;
+    height: 100dvh;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    overscroll-behavior: contain;
+  }
+  /* Con el menú abierto, los avisos quedan detrás para no tapar sus botones */
+  .shell.menu-abierto ~ .toast-region { z-index: 40; }
 }
 
 @media (max-width: 520px) {
+  /* En el encabezado solo cabe el nombre de la sección actual */
+  .crumb { min-width: 0; font-size: 0; }
+  .crumb b { display: block; overflow: hidden; font-size: .95rem; white-space: nowrap; text-overflow: ellipsis; }
   .form-fila { grid-template-columns: 1fr; }
   .acceso-card { padding: 20px 16px; }
   .obs-form select { width: 100%; min-width: 0; }
   .ver-acciones { width: 100%; }
   .ver-acciones .btn { flex: 1; }
+}
+
+/* ---------- 11. Pantallas táctiles ---------- */
+/* Botones y enlaces de al menos 44 × 44 px para tocarlos con el dedo, y
+   letra de 16 px en los campos para que iOS no acerque la página. */
+@media (pointer: coarse) {
+  input, select, textarea { font-size: 16px; }
+  input[type=text], input[type=email], input[type=password], select,
+  .btn, .tabs button { min-height: 44px; }
+  .burger, .icon-btn, .pass button, .toast-close { min-width: 44px; min-height: 44px; }
+  .logo, .acceso-volver, .olvido { display: inline-flex; align-items: center; min-height: 44px; }
+  .olvido { margin-top: -10px; }
 }

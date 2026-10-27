@@ -5,6 +5,7 @@
    components.css ya son los del teléfono. Aquí solo se agregan los
    cambios a partir de cada ancho mínimo.
 
+     Pequeños     < 390 px   → encabezado compacto; < 360 px, una columna
      Teléfonos    < 768 px   → estilos base (1 columna, menú desplegable)
      Tabletas     ≥ 768 px   → 2 columnas, menú desplegable en 2 columnas
      Laptops      ≥ 1024 px  → menú en línea, 3 y 4 columnas
@@ -12,12 +13,17 @@
    ========================================================================== */
 
 /* ==========================================================================
-   Teléfonos pequeños (< 360 px)
+   Teléfonos pequeños (< 390 px)
    ========================================================================== */
-@media (max-width: 359.98px) {
+@media (max-width: 389.98px) {
+  /* El nombre y los tres botones del encabezado caben sin encimarse */
   .brand { gap: 10px; }
-  .brand-name { font-size: 16.5px; }
+  .brand-name { font-size: 16px; }
   .mark { width: 34px; height: 34px; font-size: 19px; }
+  .head-actions { gap: 6px; }
+}
+
+@media (max-width: 359.98px) {
   .stat-strip { grid-template-columns: 1fr; }
   .hero-actions .btn { flex: 1 1 100%; justify-content: center; }
 }
@@ -164,6 +170,16 @@
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* Pantallas táctiles: botones y enlaces de al menos 44 × 44 px */
+@media (pointer: coarse) {
+  .head-btn { min-width: 44px; min-height: 44px; }
+  .brand { min-height: 44px; }
+  .foot-links { gap: 0; }
+  .foot-links a { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; }
+  .social a,
+  .toast-close { min-width: 44px; min-height: 44px; }
 }
 
 /* Abierta como app instalada: el encabezado respeta las muescas laterales */

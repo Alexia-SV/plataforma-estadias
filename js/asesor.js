@@ -151,6 +151,23 @@
     if (!navigator.onLine) estado.origen = 'sin-conexion';
   }
 
+  // Tiempo real: cuando un alumno sube una versión aparece al instante
+  let esperaCambios = null;
+  let avisoCambios = null;
+  tesina.escuchar(({ tabla, evento, fila }) => {
+    if (tabla === 'tesina_versiones' && evento === 'INSERT') {
+      const alumno = estado.alumnos.find((a) => a.id === fila.alumno_id);
+      avisoCambios = { texto: `${alumno ? alumno.nombre : 'Un alumno'} subió la versión ${fila.numero} de su tesina.`, id: fila.alumno_id };
+    }
+    clearTimeout(esperaCambios);
+    esperaCambios = setTimeout(async () => {
+      const aviso = avisoCambios;
+      avisoCambios = null;
+      await actualizar();
+      if (aviso) toast.show(aviso.texto, { actionLabel: 'Revisar', onAction: () => { location.hash = `#alumno/${aviso.id}`; } });
+    }, 700);
+  });
+
   // Al perder la conexión se avisa de inmediato; al recuperarla se actualiza
   window.addEventListener('offline', () => { estado.origen = 'sin-conexion'; pintarAvisoCache(); });
   window.addEventListener('online', () => actualizar());
@@ -194,6 +211,7 @@
     boton.innerHTML = `<span class="cargando" aria-hidden="true"></span>${audio ? 'Subiendo nota de voz…' : 'Guardando…'}`;
     try {
       await tesina.observar(version, { texto, estado: form.elements.estado.value, audio });
+      App.push.avisar(version.id); // notificación push para el alumno
       form.reset();
       grabadora?.limpiar();
       toast.show(audio ? 'Observación con nota de voz guardada. El alumno podrá escucharla aun sin conexión.'

@@ -14,6 +14,8 @@
 --   5. Observaciones del asesor (función observar_version, con nota de voz)
 --   6. Almacenamiento de archivos (buckets "tesinas" y "voz")
 --   7. Administración: hacer_asesor() y asignar_asesor()
+--   8. Tiempo real (Supabase Realtime) para versiones, observaciones y notas
+--   9. Notificaciones push: suscripciones de cada dispositivo
 --
 -- Si tu base ya tenía una versión anterior de este archivo, vuelve a
 -- ejecutarlo completo: agrega las columnas y tablas nuevas sin borrar datos.
@@ -526,3 +528,86 @@ $$;
 -- Solo el administrador (SQL Editor) puede ejecutar estas funciones
 revoke all on function public.hacer_asesor(text, text) from public, anon, authenticated;
 revoke all on function public.asignar_asesor(text, text) from public, anon, authenticated;
+
+-- --------------------------------------------------------------------------
+-- 8. Tiempo real (Supabase Realtime)
+--    La app se entera al instante cuando cambia una versión, una observación
+--    o una nota, sin recargar. Realtime respeta las mismas reglas RLS: cada
+--    quien solo recibe los cambios que puede ver.
+-- --------------------------------------------------------------------------
+do $$
+declare
+  v_tabla text;
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    foreach v_tabla in array array['tesina_versiones', 'tesina_observaciones', 'tesina_notas'] loop
+      if not exists (select 1 from pg_publication_tables
+                     where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = v_tabla) then
+        execute format('alter publication supabase_realtime add table public.%I', v_tabla);
+      end if;
+    end loop;
+  end if;
+end;
+$$;
+
+-- --------------------------------------------------------------------------
+-- 9. Notificaciones push
+--    Cada dispositivo que acepta notificaciones guarda aquí su suscripción.
+--    La función enviar-push (supabase/functions) las usa para avisar al
+--    alumno cuando su asesor lo revisa, y al asesor cuando llega una versión.
+-- --------------------------------------------------------------------------
+create table if not exists public.suscripciones_push (
+  id          uuid primary key default gen_random_uuid(),
+  usuario_id  uuid not null references auth.users (id) on delete cascade,
+  endpoint    text not null unique check (endpoint like 'https://%' and char_length(endpoint) <= 1000),
+  p256dh      text not null check (char_length(p256dh) <= 200),
+  auth        text not null check (char_length(auth) <= 100),
+  creado_en   timestamptz not null default now()
+);
+
+create index if not exists suscripciones_push_usuario_idx on public.suscripciones_push (usuario_id);
+comment on table public.suscripciones_push is 'Dispositivos que aceptaron notificaciones push (una fila por navegador).';
+
+alter table public.suscripciones_push enable row level security;
+
+-- Cada quien ve solo sus dispositivos; se registran y quitan con las funciones de abajo
+drop policy if exists "ver mis suscripciones" on public.suscripciones_push;
+create policy "ver mis suscripciones"
+  on public.suscripciones_push for select
+  to authenticated
+  using (usuario_id = (select auth.uid()));
+
+revoke all on public.suscripciones_push from anon, authenticated;
+grant select on public.suscripciones_push to authenticated;
+
+-- Registra (o reasigna, si en ese navegador entró otra cuenta) la suscripción
+create or replace function public.registrar_push(p_endpoint text, p_p256dh text, p_auth text)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Tu sesión terminó. Vuelve a iniciar sesión.' using errcode = '42501';
+  end if;
+  insert into public.suscripciones_push (usuario_id, endpoint, p256dh, auth)
+  values (auth.uid(), p_endpoint, p_p256dh, p_auth)
+  on conflict (endpoint) do update
+    set usuario_id = excluded.usuario_id, p256dh = excluded.p256dh, auth = excluded.auth, creado_en = now();
+end;
+$$;
+
+create or replace function public.quitar_push(p_endpoint text)
+returns void
+language sql
+security definer
+set search_path = ''
+as $$
+  delete from public.suscripciones_push where endpoint = p_endpoint and usuario_id = auth.uid();
+$$;
+
+revoke all on function public.registrar_push(text, text, text) from public, anon;
+revoke all on function public.quitar_push(text) from public, anon;
+grant execute on function public.registrar_push(text, text, text) to authenticated;
+grant execute on function public.quitar_push(text) to authenticated;

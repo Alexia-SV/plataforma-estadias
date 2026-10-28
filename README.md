@@ -44,6 +44,7 @@ plataforma-estadias/
 │   ├── config.js           Datos de conexión con Supabase (URL y clave publicable)
 │   ├── cache-api.js        Caché de las respuestas de la API (Cache Storage)
 │   ├── cola.js             Entregas sin conexión (IndexedDB); la usan la página y sw.js
+│   ├── push.js             Notificaciones push: activar, desactivar y avisar
 │   ├── auth.js             Cuentas, sesión y rol (alumno o asesor)
 │   ├── tesina.js           Subida de versiones, historial, descargas, observaciones y notas
 │   ├── panel.js            Menú, vistas, ventanas y dibujo común de alumno.html y asesor.html
@@ -60,7 +61,9 @@ plataforma-estadias/
 │       └── pdfjs/          PDF.js de Mozilla (4.10.38, licencia Apache 2.0)
 ├── supabase/
 │   ├── esquema.sql         Tabla alumnos, seguridad (RLS) y registro automático
-│   └── tesina.sql          Asesores, asignaciones, versiones, observaciones y archivos
+│   ├── tesina.sql          Asesores, versiones, observaciones, notas, archivos, tiempo real y push
+│   ├── generar-claves-push.mjs  Claves VAPID para las notificaciones push
+│   └── functions/enviar-push/   Función del servidor que envía los push (Supabase Edge Function)
 ├── icons/                  Íconos de la app (SVG, 192, 512, enmascarables, iOS)
 └── media/                  Imagen principal, video del recorrido y capturas de la app
 ```
@@ -130,6 +133,8 @@ Lo que garantiza la base de datos (`supabase/tesina.sql`):
 | **Notas ancladas** | Asesor anota, alumno las ve | Botón **Anotar** / **Notas**: abre el documento dentro de la app. En un PDF, el asesor toca el punto exacto de la página; en Word, el párrafo. El alumno ve cada nota numerada en su lugar. |
 | **Pre-revisión del formato** | Alumno (el asesor ve el resultado) | Al elegir el archivo, la app revisa en el navegador: hoja carta, márgenes de 2.5 cm, números de página, portada con la universidad y el nombre, índice, introducción y conclusiones, referencias y que cada cita APA tenga su referencia. Las reglas están en `REGLAS` de `js/prerevision.js`, para ajustarlas a la guía oficial. |
 | **Notas de voz** | Asesor graba, alumno escucha | En la observación, **Grabar nota de voz** (máximo 3 minutos). El audio va al bucket privado `voz`; el alumno lo escucha y queda guardado para oírlo sin conexión. |
+| **Tiempo real** | Ambos | Con Supabase Realtime, la observación del asesor aparece sola en el portal del alumno y la versión nueva del alumno, en el panel del asesor, sin recargar (`tesina.escuchar()` en `js/tesina.js`). |
+| **Notificaciones push** | Ambos | En **Mi perfil → Notificaciones** cada quien las activa. La función `enviar-push` avisa al alumno cuando su asesor deja una observación y al asesor cuando llega una versión, aunque la app esté cerrada (`js/push.js` y evento `push` de `sw.js`). |
 
 Sin conexión funcionan el comparador, el visor y las notas de voz de los archivos que ya
 se abrieron una vez (el panel del alumno guarda por adelantado las dos últimas versiones y
@@ -144,8 +149,24 @@ En **SQL Editor**, ejecuta en este orden (los dos se pueden volver a ejecutar):
 2. `supabase/tesina.sql`
 
 Si la base ya existía, **vuelve a ejecutar `supabase/tesina.sql` completo** para agregar
-las notas ancladas, las notas de voz (bucket `voz`) y la pre-revisión. Mientras no se
-ejecute, el portal sigue funcionando, pero sin esas herramientas.
+las notas ancladas, las notas de voz (bucket `voz`), la pre-revisión, el tiempo real y la
+tabla de las notificaciones push. Mientras no se ejecute, el portal sigue funcionando, pero
+sin esas herramientas.
+
+### Notificaciones push (una sola vez)
+
+1. En una terminal, desde la carpeta del proyecto: `node supabase/generar-claves-push.mjs`.
+   Muestra una clave pública y una privada nuevas (la privada es secreta: no la compartas
+   ni la guardes en el proyecto).
+2. En Supabase, **Edge Functions → Secrets → Add new secret**, agrega `VAPID_PUBLIC_KEY`,
+   `VAPID_PRIVATE_KEY` y `VAPID_SUBJECT` (con el valor `mailto:` seguido de tu correo).
+3. En **Edge Functions → Deploy a new function → Via Editor**, ponle de nombre
+   `enviar-push`, pega el contenido de `supabase/functions/enviar-push/index.ts` y pulsa
+   **Deploy function**.
+
+La app pide la clave pública a la función, así que no hay que cambiar ningún archivo. En
+iPhone y iPad, las notificaciones funcionan desde iOS 16.4 con la app agregada a la
+pantalla de inicio.
 
 ### Dar de alta a un asesor y asignarle alumnos
 
@@ -208,7 +229,7 @@ El sitio usa tres cachés de Cache Storage:
 
 | Caché | Quién la llena | Contenido | Estrategia |
 | --- | --- | --- | --- |
-| `estadias-v6` | `sw.js` | Páginas, CSS, JS (incluido PDF.js), íconos, imágenes y video | Precarga + primero la red (el video, primero la caché) |
+| `estadias-v7` | `sw.js` | Páginas, CSS, JS (incluido PDF.js), íconos, imágenes y video | Precarga + primero la red (el video, primero la caché) |
 | `estadias-fuentes` | `sw.js` | Tipografías de Google Fonts | Primero la caché |
 | `estadias-api` | `js/cache-api.js` | Respuestas de la API (perfil, rol, versiones, asesor y alumnos del asesor), archivos de la tesina ya abiertos y notas de voz | Stale-while-revalidate |
 

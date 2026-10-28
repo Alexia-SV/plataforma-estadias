@@ -193,6 +193,12 @@
           const version = await enviarUna(entrada, sesion);
           await quitar(entrada.id);
           enviadas.push({ ...version, nombre: entrada.nombre });
+          // Avisa al asesor con una notificación push (si falla, no importa)
+          await pedir(`${sesion.url.replace(/\/$/, '')}/functions/v1/enviar-push`, {
+            method: 'POST',
+            headers: { apikey: sesion.key, Authorization: `Bearer ${sesion.token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accion: 'avisar', version: version.id }),
+          }).catch(() => {});
         } catch (error) {
           if (error.permanente) {
             await guardar({ ...entrada, fallida: true, ultimoError: error.message });

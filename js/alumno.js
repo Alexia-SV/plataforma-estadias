@@ -200,6 +200,23 @@
     pintarTodo();
   }
 
+  // Tiempo real: lo que hace el asesor aparece al instante, sin recargar.
+  // Se juntan los cambios de un mismo momento (observación + estado) en un solo aviso.
+  let esperaCambios = null;
+  let avisoCambios = '';
+  tesina.escuchar(({ tabla, evento }) => {
+    if (tabla === 'tesina_observaciones' && evento === 'INSERT') avisoCambios = 'Tu asesor dejó una observación en tu tesina.';
+    else if (tabla === 'tesina_notas' && evento === 'INSERT') avisoCambios ||= 'Tu asesor dejó una nota en tu documento.';
+    else if (tabla === 'tesina_versiones' && evento === 'UPDATE') avisoCambios ||= 'Tu asesor cambió el estado de tu tesina.';
+    clearTimeout(esperaCambios);
+    esperaCambios = setTimeout(async () => {
+      const aviso = avisoCambios;
+      avisoCambios = '';
+      await actualizar();
+      if (aviso) toast.show(aviso, { actionLabel: 'Ver', onAction: () => { location.hash = '#tesina'; } });
+    }, 700);
+  });
+
   // Con conexión, se guardan en el dispositivo los archivos que el alumno
   // querrá abrir sin internet: las versiones con notas y las dos últimas
   // (para compararlas).
@@ -405,6 +422,7 @@
       }
       limpiarFormulario();
       toast.show(`¡Listo! Tu archivo se guardó como la versión ${nueva.numero}.`);
+      App.push.avisar(nueva.id); // notificación push para el asesor
       estado.versiones = [nueva, ...estado.versiones.filter((v) => v.id !== nueva.id)];
       pintarTodo();
       await actualizar();

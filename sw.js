@@ -20,6 +20,10 @@
      vuelve la red, el navegador despierta a este service worker, aunque la
      app esté cerrada, y él envía la entrega y avisa con una notificación.
 
+   Notificaciones push
+   · El evento push muestra los avisos que manda el servidor (función
+     enviar-push de Supabase), también con la app cerrada.
+
    Al agregar, quitar o renombrar archivos, actualiza PRECACHE y sube
    VERSION: el navegador instalará el service worker nuevo y borrará la
    caché anterior.
@@ -27,7 +31,7 @@
 
 importScripts('js/cola.js'); // define ColaTesina
 
-const VERSION = 'v6';
+const VERSION = 'v7';
 const STATIC_CACHE = `estadias-${VERSION}`;
 const FONT_CACHE = 'estadias-fuentes';
 const API_CACHE = 'estadias-api'; // la llena js/cache-api.js
@@ -54,6 +58,7 @@ const PRECACHE = [
   'js/config.js',
   'js/cache-api.js',
   'js/cola.js',
+  'js/push.js',
   'js/auth.js',
   'js/tesina.js',
   'js/panel.js',
@@ -174,7 +179,31 @@ async function enviarCola() {
   }
 }
 
-// Al tocar la notificación se abre (o se enfoca) «Mi tesina»
+/* ==========================================================================
+   Notificaciones push (Push API)
+   El servidor (supabase/functions/enviar-push) manda el aviso cuando el
+   asesor deja una observación o el alumno sube una versión; se muestra
+   aunque la app esté cerrada.
+   ========================================================================== */
+
+self.addEventListener('push', (event) => {
+  let aviso = {};
+  try {
+    aviso = event.data ? event.data.json() : {};
+  } catch {
+    aviso = { texto: event.data?.text() };
+  }
+  event.waitUntil(self.registration.showNotification(aviso.titulo || 'Gestión de Estadías', {
+    body: aviso.texto || 'Hay novedades en tu tesina.',
+    icon: 'icons/icon-192.png',
+    badge: 'icons/icon-maskable-192.png',
+    tag: aviso.etiqueta || 'tesina',
+    lang: 'es-MX',
+    data: { url: aviso.url || './' },
+  }));
+});
+
+// Al tocar la notificación se abre (o se enfoca) la página indicada
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const destino = new URL(event.notification.data?.url || './', self.registration.scope).href;

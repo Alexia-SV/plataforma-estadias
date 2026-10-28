@@ -366,6 +366,56 @@ App.panel = (() => {
 
   document.querySelectorAll('[data-cambiar-contrasena]').forEach(montarCambioContrasena);
 
+  /* ---------- Notificaciones push (Mi perfil) ---------- */
+  const ESTADO_PUSH = {
+    activas: ['ok', 'Activas en este dispositivo'],
+    inactivas: ['', 'Desactivadas'],
+    bloqueadas: ['bad', 'Bloqueadas por el navegador'],
+    'no-disponible': ['', 'No disponibles en este navegador'],
+  };
+
+  async function montarNotificaciones(contenedor) {
+    const push = App.push;
+    if (!push) return;
+    const pintarEstado = async () => {
+      const estado = await push.estado().catch(() => 'no-disponible');
+      const [clase, texto] = ESTADO_PUSH[estado];
+      App.ui.pintar(contenedor, `
+        <div class="r envuelve" style="border:0;padding-top:0">
+          <span class="ic-box" style="margin:0"><i data-ic="bell"></i></span>
+          <div class="grow"><b>Avisos push</b><small>En este navegador</small></div>
+          <span class="chip ${clase}" id="estado-push">${App.ui.esc(texto)}</span>
+        </div>
+        ${estado === 'bloqueadas' ? '<p class="help warn"><i data-ic="alert"></i><span>Para activarlas, permite las notificaciones en la configuración del sitio (el candado junto a la dirección).</span></p>' : ''}
+        ${estado === 'no-disponible' ? '<p class="small muted">En iPhone y iPad, primero agrega la app a la pantalla de inicio (Compartir → Agregar a inicio) y ábrela desde ahí.</p>' : ''}
+        <div class="toolbar" style="margin:10px 0 0">
+          ${estado === 'activas'
+            ? '<button class="btn out sm" type="button" data-push="desactivar"><i data-ic="bell" data-s="16"></i>Desactivar notificaciones</button>'
+            : `<button class="btn sm" type="button" data-push="activar"${estado === 'inactivas' ? '' : ' disabled'}><i data-ic="bell" data-s="16"></i>Activar notificaciones</button>`}
+        </div>`);
+    };
+    contenedor.addEventListener('click', async (e) => {
+      const boton = e.target.closest('[data-push]');
+      if (!boton) return;
+      boton.disabled = true;
+      try {
+        if (boton.dataset.push === 'activar') {
+          await push.activar();
+          toast.show('Notificaciones activadas. Te avisaremos aunque la app esté cerrada.');
+        } else {
+          await push.desactivar();
+          toast.show('Notificaciones desactivadas en este dispositivo.');
+        }
+      } catch (err) {
+        toast.show(err.message);
+      }
+      await pintarEstado();
+    });
+    await pintarEstado();
+  }
+
+  document.querySelectorAll('[data-notificaciones]').forEach(montarNotificaciones);
+
   /* ---------- Usuario en la barra superior ---------- */
   function usuario(nombre) {
     const avatar = document.getElementById('avatar');

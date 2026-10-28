@@ -13,6 +13,7 @@
      enlaceDescarga(version)    enlace temporal (2 min) para descargar el archivo
      observar(version, { texto, estado, audio })  observación del asesor (texto o voz)
      anotar(version, nota) · borrarNota(nota)  notas ancladas en el documento
+     escuchar(fn)               cambios al instante (Supabase Realtime)
      completo                   false si la base de datos aún no tiene las tablas
                                 nuevas de supabase/tesina.sql (notas, voz, pre-revisión)
      guardado(clave)            copia guardada en la caché "estadias-api"
@@ -257,6 +258,21 @@ App.tesina = (() => {
     if (error) throw auth.error(error);
   }
 
+  /* ---------- Tiempo real (Supabase Realtime) ---------- */
+  // Avisa en cuanto cambia una versión, una observación o una nota que el
+  // usuario puede ver (Realtime aplica las mismas reglas RLS). Devuelve una
+  // función para dejar de escuchar.
+  function escuchar(alCambiar) {
+    if (!auth.configurado || !completo) return () => {};
+    const canal = cliente().channel(`tesina-${crypto.randomUUID()}`);
+    ['tesina_versiones', 'tesina_observaciones', 'tesina_notas'].forEach((tabla) => {
+      canal.on('postgres_changes', { event: '*', schema: 'public', table: tabla },
+        (cambio) => alCambiar({ tabla, evento: cambio.eventType, fila: cambio.new }));
+    });
+    canal.subscribe();
+    return () => cliente().removeChannel(canal);
+  }
+
   /* ---------- Ambos ---------- */
   async function enlaceDescarga(version) {
     if (!navigator.onLine) throw new Error('Necesitas conexión a internet para descargar el archivo.');
@@ -269,7 +285,7 @@ App.tesina = (() => {
 
   return {
     MAX_BYTES, ACEPTA, validar, subir, pendiente, sesionParaCola, misVersiones, miAsesor, misAlumnos,
-    enlaceDescarga, observar, anotar, borrarNota, guardado, tamano, tipoCorto,
+    enlaceDescarga, observar, anotar, borrarNota, escuchar, guardado, tamano, tipoCorto,
     get completo() { return completo; },
   };
 })();

@@ -226,6 +226,8 @@ App.auth = (() => {
         peticion.onsuccess = peticion.onerror = peticion.onblocked = () => listo();
       });
     } catch { /* IndexedDB no disponible */ }
+    // Este dispositivo deja de recibir notificaciones de la cuenta
+    try { await App.push?.desactivar(); } catch { /* sin conexión o sin push */ }
     if (!cliente) return;
     try {
       await cliente.auth.signOut({ scope: 'local' });

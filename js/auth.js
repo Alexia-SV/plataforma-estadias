@@ -11,7 +11,7 @@
      obtenerPerfil()           datos del alumno desde la API (y los guarda en caché)
      obtenerPerfilAsesor()     datos del asesor desde la API (y los guarda en caché)
      perfilGuardado(clave)     datos guardados en la caché "estadias-api"
-     cerrarSesion()            cierra la sesión y borra la caché de la API
+     cerrarSesion()            cierra la sesión y borra la caché de la API y la cola de envíos
      cambiarContrasena(a, n)   comprueba la contraseña actual y pone la nueva
      recuperarContrasena(c)    envía el correo con el enlace de recuperación
      establecerContrasena(n)   pone la contraseña nueva al volver de ese enlace
@@ -42,7 +42,7 @@ App.auth = (() => {
 
   /* ---------- Mensajes de error en español ---------- */
   // Mensajes que la base de datos ya envía en español (supabase/tesina.sql)
-  const MENSAJE_PROPIO = /^(Solo |No se |No existe|No hay|La versión|El archivo|Estado no)/;
+  const MENSAJE_PROPIO = /^(Solo |No se |No existe|No hay|La versión|El archivo|Estado no|Escribe )/;
 
   function traducir(error) {
     const codigo = String(error?.code || error?.error || '');
@@ -217,8 +217,15 @@ App.auth = (() => {
   }
 
   async function cerrarSesion() {
-    // Los datos del usuario no deben quedar en el dispositivo
+    // Los datos del usuario no deben quedar en el dispositivo: ni la caché
+    // de la API ni las entregas pendientes de envío (js/cola.js)
     try { await cacheApi.borrar(); } catch { /* caché no disponible */ }
+    try {
+      await new Promise((listo) => {
+        const peticion = indexedDB.deleteDatabase('estadias-cola');
+        peticion.onsuccess = peticion.onerror = peticion.onblocked = () => listo();
+      });
+    } catch { /* IndexedDB no disponible */ }
     if (!cliente) return;
     try {
       await cliente.auth.signOut({ scope: 'local' });

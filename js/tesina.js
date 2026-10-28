@@ -4,12 +4,17 @@
    Expone App.tesina con:
      MAX_BYTES, ACEPTA          límites: 10 MB · .pdf, .doc, .docx
      validar(archivo)           '' si es válido, o el mensaje de error
-     subir(archivo, comentario) sube el archivo y lo registra como versión nueva
+     subir(archivo, comentario, prerevision)  sube el archivo y lo registra como versión nueva
+     pendiente(archivo, comentario, prerevision)  datos para la cola sin conexión (cola.js)
+     sesionParaCola()           token para que el service worker envíe la cola
      misVersiones()             historial del alumno con sesión (caché "tesina")
      miAsesor()                 asesor asignado al alumno (caché "asesor")
      misAlumnos()               alumnos del asesor con sus versiones (caché "asesor-alumnos")
      enlaceDescarga(version)    enlace temporal (2 min) para descargar el archivo
-     observar(id, texto, estado)  observación del asesor (y cambio de estado)
+     observar(version, { texto, estado, audio })  observación del asesor (texto o voz)
+     anotar(version, nota) · borrarNota(nota)  notas ancladas en el documento
+     completo                   false si la base de datos aún no tiene las tablas
+                                nuevas de supabase/tesina.sql (notas, voz, pre-revisión)
      guardado(clave)            copia guardada en la caché "estadias-api"
      tamano(bytes), tipoCorto(mime)
    El número de versión, el tipo y el tamaño definitivos los fija la base de
@@ -33,9 +38,18 @@ App.tesina = (() => {
 
   const SELECT_VERSION = `
     id, alumno_id, numero, archivo_path, nombre_archivo, tipo, tamano_bytes,
+    comentario, estado, subida_en, prerevision,
+    observaciones:tesina_observaciones (id, texto, estado_asignado, creado_en, audio_path, audio_segundos, asesor:asesores (nombre)),
+    notas:tesina_notas (id, pagina, x, y, parrafo, extracto, texto, creado_en, asesor_id, asesor:asesores (nombre))
+  `;
+  // La misma consulta para una base de datos que aún no tiene las tablas nuevas
+  const SELECT_BASICO = `
+    id, alumno_id, numero, archivo_path, nombre_archivo, tipo, tamano_bytes,
     comentario, estado, subida_en,
     observaciones:tesina_observaciones (id, texto, estado_asignado, creado_en, asesor:asesores (nombre))
   `;
+  const FALTA_ESQUEMA = ['PGRST200', 'PGRST204', '42703', '42P01'];
+  let completo = true;
 
   /* ---------- Utilidades ---------- */
   const extension = (nombre) => (String(nombre).split('.').pop() || '').toLowerCase();
@@ -58,8 +72,22 @@ App.tesina = (() => {
   // Versiones de la más reciente a la más antigua; observaciones en orden cronológico
   function ordenar(versiones) {
     versiones.sort((a, b) => b.numero - a.numero);
-    versiones.forEach((v) => (v.observaciones || []).sort((a, b) => new Date(a.creado_en) - new Date(b.creado_en)));
+    versiones.forEach((v) => {
+      (v.observaciones || []).sort((a, b) => new Date(a.creado_en) - new Date(b.creado_en));
+      v.notas = v.notas || [];
+    });
     return versiones;
+  }
+
+  // Consulta las versiones; si la base de datos no se ha actualizado, usa la consulta básica
+  async function versiones(filtrar) {
+    let { data, error } = await filtrar(cliente().from('tesina_versiones').select(completo ? SELECT_VERSION : SELECT_BASICO));
+    if (error && completo && FALTA_ESQUEMA.includes(error.code)) {
+      completo = false;
+      ({ data, error } = await filtrar(cliente().from('tesina_versiones').select(SELECT_BASICO)));
+    }
+    if (error) throw auth.error(error);
+    return ordenar(data);
   }
 
   function cliente() {
@@ -84,9 +112,7 @@ App.tesina = (() => {
   /* ---------- Alumno ---------- */
   async function misVersiones() {
     const id = await exigirUsuario();
-    const { data, error } = await cliente().from('tesina_versiones').select(SELECT_VERSION).eq('alumno_id', id);
-    if (error) throw auth.error(error);
-    ordenar(data);
+    const data = await versiones((q) => q.eq('alumno_id', id));
     await guardar('tesina', data);
     return data;
   }
@@ -104,7 +130,10 @@ App.tesina = (() => {
     return asesor;
   }
 
-  async function subir(archivo, comentario) {
+  // Nombre interno único: el original se conserva en la base de datos
+  const rutaNueva = (id, ext) => `${id}/${crypto.randomUUID()}.${ext}`;
+
+  async function subir(archivo, comentario, prerevision = null) {
     const problema = validar(archivo);
     if (problema) throw new Error(problema);
     if (!navigator.onLine) throw new Error('Necesitas conexión a internet para subir tu tesina.');
@@ -112,8 +141,7 @@ App.tesina = (() => {
     const id = await exigirUsuario();
     const ext = extension(archivo.name);
     const tipo = TIPOS[ext];
-    // Nombre interno único: el original se conserva en la base de datos
-    const ruta = `${id}/${crypto.randomUUID()}.${ext}`;
+    const ruta = rutaNueva(id, ext);
 
     const subida = await cliente().storage.from(BUCKET).upload(ruta, archivo, { contentType: tipo, upsert: false });
     if (subida.error) throw auth.error(subida.error);
@@ -128,8 +156,9 @@ App.tesina = (() => {
         tipo,
         tamano_bytes: archivo.size,
         comentario: comentario?.trim() || null,
+        ...(prerevision && completo ? { prerevision } : {}),
       })
-      .select(SELECT_VERSION)
+      .select(completo ? SELECT_VERSION : SELECT_BASICO)
       .single();
 
     if (error) {
@@ -137,7 +166,39 @@ App.tesina = (() => {
       await cliente().storage.from(BUCKET).remove([ruta]).catch(() => {});
       throw auth.error(error);
     }
-    return data;
+    return ordenar([data])[0];
+  }
+
+  /* ---------- Entregas sin conexión (las envía cola.js) ---------- */
+  async function pendiente(archivo, comentario, prerevision = null) {
+    const problema = validar(archivo);
+    if (problema) throw new Error(problema);
+    const id = await exigirUsuario();
+    const ext = extension(archivo.name);
+    return {
+      archivo,
+      nombre: archivo.name.slice(0, 200),
+      tipo: TIPOS[ext],
+      tamano: archivo.size,
+      comentario: comentario?.trim() || '',
+      ruta: rutaNueva(id, ext),
+      alumnoId: id,
+      prerevision: completo ? prerevision : null,
+    };
+  }
+
+  // Lo que el service worker necesita para enviar la cola sin la página abierta
+  async function sesionParaCola() {
+    const { data } = await cliente().auth.getSession();
+    const sesion = data.session;
+    if (!sesion) return null;
+    return {
+      token: sesion.access_token,
+      expira: sesion.expires_at,
+      usuarioId: sesion.user.id,
+      url: App.config.supabaseUrl,
+      key: App.config.supabaseKey,
+    };
   }
 
   /* ---------- Asesor ---------- */
@@ -151,28 +212,49 @@ App.tesina = (() => {
 
     const alumnos = asignaciones.filter((a) => a.alumno).map((a) => ({ ...a.alumno, asignado_en: a.asignado_en, versiones: [] }));
     if (alumnos.length) {
-      const { data: versiones, error: e } = await cliente()
-        .from('tesina_versiones')
-        .select(SELECT_VERSION)
-        .in('alumno_id', alumnos.map((a) => a.id));
-      if (e) throw auth.error(e);
-      ordenar(versiones);
-      alumnos.forEach((a) => { a.versiones = versiones.filter((v) => v.alumno_id === a.id); });
+      const todas = await versiones((q) => q.in('alumno_id', alumnos.map((a) => a.id)));
+      alumnos.forEach((a) => { a.versiones = todas.filter((v) => v.alumno_id === a.id); });
     }
     alumnos.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
     await guardar('asesor-alumnos', alumnos);
     return alumnos;
   }
 
-  async function observar(versionId, texto, estado) {
+  async function observar(version, { texto = '', estado = '', audio = null } = {}) {
     if (!navigator.onLine) throw new Error('Necesitas conexión a internet para guardar la observación.');
-    const { data, error } = await cliente().rpc('observar_version', {
-      p_version: versionId,
-      p_texto: texto,
-      p_estado: estado || null,
-    });
+    const parametros = { p_version: version.id, p_texto: texto, p_estado: estado || null };
+    let ruta = null;
+    if (audio) {
+      if (!completo) throw new Error('Para guardar notas de voz, primero actualiza la base de datos con supabase/tesina.sql.');
+      ruta = await App.voz.subir(version.alumno_id, audio);
+      Object.assign(parametros, { p_audio_path: ruta, p_audio_segundos: audio.segundos });
+    }
+    const { data, error } = await cliente().rpc('observar_version', parametros);
+    if (error) {
+      if (ruta) await App.voz.quitar(ruta);
+      throw auth.error(error);
+    }
+    return data;
+  }
+
+  /* ---------- Notas ancladas en el documento (asesor) ---------- */
+  async function anotar(version, { pagina = null, x = null, y = null, parrafo = null, extracto = '', texto }) {
+    if (!navigator.onLine) throw new Error('Necesitas conexión a internet para guardar la nota.');
+    if (!completo) throw new Error('Para guardar notas en el documento, primero actualiza la base de datos con supabase/tesina.sql.');
+    const id = await exigirUsuario();
+    const { data, error } = await cliente()
+      .from('tesina_notas')
+      .insert({ version_id: version.id, asesor_id: id, pagina, x, y, parrafo, extracto: extracto || null, texto })
+      .select('id, pagina, x, y, parrafo, extracto, texto, creado_en, asesor_id, asesor:asesores (nombre)')
+      .single();
     if (error) throw auth.error(error);
     return data;
+  }
+
+  async function borrarNota(nota) {
+    if (!navigator.onLine) throw new Error('Necesitas conexión a internet para borrar la nota.');
+    const { error } = await cliente().from('tesina_notas').delete().eq('id', nota.id);
+    if (error) throw auth.error(error);
   }
 
   /* ---------- Ambos ---------- */
@@ -186,7 +268,8 @@ App.tesina = (() => {
   }
 
   return {
-    MAX_BYTES, ACEPTA, validar, subir, misVersiones, miAsesor, misAlumnos,
-    enlaceDescarga, observar, guardado, tamano, tipoCorto,
+    MAX_BYTES, ACEPTA, validar, subir, pendiente, sesionParaCola, misVersiones, miAsesor, misAlumnos,
+    enlaceDescarga, observar, anotar, borrarNota, guardado, tamano, tipoCorto,
+    get completo() { return completo; },
   };
 })();

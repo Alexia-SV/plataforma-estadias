@@ -6,10 +6,22 @@
      iniciar({ alCambiar }) activa el menú y las vistas (#inicio, #tesina, …)
      usuario(nombre)       pone las iniciales en la barra superior
    App.ui (dibujo seguro: todo texto del usuario se escapa)
-     esc, fecha, fechaHora, iniciales, chipEstado, version, panelCache
+     esc, fecha, fechaHora, iniciales, chipEstado, version, panelCache,
+     dialogo(id, { titulo, clase })   ventana modal (<dialog>) reutilizable
    Depende de sigep.js (íconos), toast.js, cache-api.js y auth.js.
    ========================================================================== */
 window.App = window.App || {};
+
+/* Íconos que usa el Módulo 4 y que no trae sigep.js. Se agregan a su juego
+   de íconos (P) sin modificar ese archivo, con el mismo trazo. */
+if (typeof P === 'object') {
+  Object.assign(P, {
+    mic: '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/>',
+    stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+    columns: '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/><path d="M6.5 9h3M14.5 9h3M14.5 13h3M6.5 13h3"/>',
+    cloud: '<path d="M17.5 19H8a6 6 0 1 1 5.66-8H15a4.5 4.5 0 0 1 2.5 8.24"/><polyline points="12 13 12 21"/><polyline points="9 16 12 13 15 16"/>',
+  });
+}
 
 /* ==========================================================================
    App.ui — utilidades para dibujar
@@ -40,26 +52,97 @@ App.ui = (() => {
     if (typeof window.pintarIconos === 'function') window.pintarIconos(nodo);
   }
 
+  /** Ventana modal reutilizable: se crea la primera vez y después solo cambia su contenido. */
+  function dialogo(id, { titulo, clase = '' }) {
+    let dlg = document.getElementById(id);
+    if (!dlg) {
+      dlg = document.createElement('dialog');
+      dlg.id = id;
+      dlg.setAttribute('aria-labelledby', `${id}-t`);
+      pintar(dlg, `
+        <div class="dlg-h"><h2 id="${id}-t"></h2>
+          <button class="icon-btn" type="button" data-cerrar aria-label="Cerrar"><i data-ic="x"></i></button></div>
+        <div class="dlg-barra"></div>
+        <div class="dlg-cuerpo"></div>`);
+      document.body.append(dlg);
+      dlg.querySelector('[data-cerrar]').addEventListener('click', () => dlg.close());
+      // Clic en el fondo oscuro: cierra
+      dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+      // La ventana queda por encima de toda la página; los avisos se mudan
+      // a ella mientras está abierta para que sigan viéndose
+      dlg.addEventListener('close', () => {
+        const avisos = document.getElementById('toast-region');
+        if (avisos && dlg.contains(avisos)) document.body.append(avisos);
+      });
+    }
+    dlg.className = `dlg ${clase}`;
+    dlg.querySelector('.dlg-h h2').textContent = titulo;
+    return {
+      dlg,
+      barra: dlg.querySelector('.dlg-barra'),
+      cuerpo: dlg.querySelector('.dlg-cuerpo'),
+      abrir: () => {
+        if (dlg.open) return;
+        dlg.showModal();
+        const avisos = document.getElementById('toast-region');
+        if (avisos) dlg.append(avisos);
+      },
+    };
+  }
+
+  /** Observación del asesor (con su nota de voz, si tiene). */
+  function observacion(o) {
+    const voz = o.audio_path ? `
+      <div class="voz" data-voz="${esc(o.audio_path)}">
+        <span class="ic-box" aria-hidden="true"><i data-ic="mic" data-s="16"></i></span>
+        <div class="grow"><small>Nota de voz · ${esc(App.voz ? App.voz.duracion(o.audio_segundos || 0) : '')}</small>
+          <audio controls preload="metadata" hidden></audio>
+          <span class="voz-aviso small muted">Cargando…</span></div>
+      </div>` : '';
+    const soloVoz = o.audio_path && o.texto === 'Nota de voz';
+    return `
+      <div class="obs">
+        <span class="avatar solid" aria-hidden="true">${esc(iniciales(o.asesor?.nombre || 'Asesor'))}</span>
+        <div class="grow">
+          <div class="meta"><b>${esc(o.asesor?.nombre || 'Asesor')}</b><span>${esc(fechaHora(o.creado_en))}</span>
+            ${o.estado_asignado ? chipEstado(o.estado_asignado) : ''}</div>
+          ${soloVoz ? '' : `<div class="burbuja">${esc(o.texto)}</div>`}
+          ${voz}
+        </div>
+      </div>`;
+  }
+
   /** Tarjeta de una versión de la tesina (para alumno y asesor). */
-  function version(v, { actual = false, formulario = false } = {}) {
+  function version(v, { actual = false, formulario = false, anterior = false } = {}) {
     const obs = v.observaciones || [];
+    const notas = v.notas || [];
+    const completo = App.tesina.completo;
+    const legible = App.documento && App.documento.clase(v.tipo) !== 'doc';
     const lista = obs.length
-      ? obs.map((o) => `
-          <div class="obs">
-            <span class="avatar solid" aria-hidden="true">${esc(iniciales(o.asesor?.nombre || 'Asesor'))}</span>
-            <div class="grow">
-              <div class="meta"><b>${esc(o.asesor?.nombre || 'Asesor')}</b><span>${esc(fechaHora(o.creado_en))}</span>
-                ${o.estado_asignado ? chipEstado(o.estado_asignado) : ''}</div>
-              <div class="burbuja">${esc(o.texto)}</div>
-            </div>
-          </div>`).join('')
+      ? obs.map(observacion).join('')
       : '<p class="obs-vacia">Aún no hay observaciones del asesor para esta versión.</p>';
+
+    const botones = [
+      anterior && legible ? `<button class="btn out sm" type="button" data-comparar="${esc(v.id)}" title="Comparar con la versión anterior"><i data-ic="columns" data-s="16"></i>Comparar</button>` : '',
+      completo && legible ? `<button class="btn out sm" type="button" data-visor="${esc(v.id)}"><i data-ic="pin" data-s="16"></i>${formulario ? 'Anotar' : 'Notas'}${notas.length ? ` <span class="cuenta">${notas.length}</span>` : ''}</button>` : '',
+    ].join('');
+
+    const pre = v.prerevision && App.prerevision ? `
+      <details class="pre-ver">
+        <summary><i data-ic="clipboard" data-s="16"></i>Pre-revisión del formato:
+          <b>${v.prerevision.cumplidos} de ${v.prerevision.total} puntos</b></summary>
+        ${App.prerevision.html(v.prerevision, { titulo: false })}
+      </details>` : '';
+
+    const voz = completo && App.voz?.disponible
+      ? '<div class="voz-grabadora" data-grabadora></div>' : '';
 
     const form = formulario ? `
       <form class="obs-form" data-observar="${esc(v.id)}" novalidate>
         <label class="field">Nueva observación para la versión ${v.numero}
-          <textarea name="texto" maxlength="2000" required placeholder="Escribe tus comentarios para el alumno"></textarea>
+          <textarea name="texto" maxlength="2000" placeholder="Escribe tus comentarios para el alumno${voz ? ' o graba una nota de voz' : ''}"></textarea>
         </label>
+        ${voz}
         <p class="field-error" role="alert"></p>
         <div class="fila">
           <select name="estado" aria-label="Estado de la versión">
@@ -81,10 +164,12 @@ App.ui = (() => {
           </div>
           <div class="ver-acciones">
             ${chipEstado(v.estado)}
+            ${botones}
             <button class="btn out sm" type="button" data-descargar="${esc(v.id)}"><i data-ic="download" data-s="16"></i>Descargar</button>
           </div>
         </div>
         ${v.comentario ? `<p class="ver-comentario"><small>Comentario del alumno</small>${esc(v.comentario)}</p>` : ''}
+        ${pre}
         <div class="obs-lista">
           <span class="obs-titulo">Observaciones del asesor (${obs.length})</span>
           ${lista}
@@ -110,7 +195,7 @@ App.ui = (() => {
       <p class="small muted" style="margin-top:10px">${usado == null ? '' : `Espacio usado: ${formato(usado)} de ${formato(cuota)} disponibles.`}</p>`);
   }
 
-  return { esc, fecha, fechaHora, iniciales, chipEstado, pintar, version, panelCache };
+  return { esc, fecha, fechaHora, iniciales, chipEstado, pintar, version, panelCache, dialogo };
 })();
 
 /* ==========================================================================
@@ -190,6 +275,10 @@ App.panel = (() => {
 
   /* ---------- Cerrar sesión ---------- */
   document.querySelector('.side-out')?.addEventListener('click', async () => {
+    // Las entregas que no se han enviado se borran al cerrar sesión
+    const pendientes = await App.cola?.contar().catch(() => 0);
+    if (pendientes && !confirm(`Tienes ${pendientes === 1 ? 'una entrega' : `${pendientes} entregas`} sin enviar. `
+      + 'Si cierras sesión se borrarán de este dispositivo. ¿Cerrar sesión de todos modos?')) return;
     await auth.cerrarSesion();
     location.replace('portal.html');
   });

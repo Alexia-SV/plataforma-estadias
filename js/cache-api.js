@@ -7,6 +7,8 @@
    Expone App.cacheApi con:
      guardar(clave, datos)   cache.put()    guarda un objeto como respuesta JSON
      leer(clave)             cache.match()  devuelve { datos, guardadoEn } o null
+     guardarArchivo(c, blob) cache.put()    guarda un archivo (PDF de la tesina, nota de voz)
+     leerArchivo(clave)      cache.match()  devuelve el Blob guardado o null
      borrar()                caches.delete() elimina toda la caché de la API
      resumen()               caches.keys() + cache.keys() + storage.estimate()
 
@@ -47,6 +49,21 @@ App.cacheApi = (() => {
     };
   }
 
+  // Archivos que se abrieron con conexión, para verlos o escucharlos sin ella
+  async function guardarArchivo(clave, blob) {
+    if (!disponible) return;
+    const cache = await caches.open(NOMBRE);
+    await cache.put(url(clave), new Response(blob, {
+      headers: { 'Content-Type': blob.type || 'application/octet-stream', 'X-Guardado-En': new Date().toISOString() },
+    }));
+  }
+
+  async function leerArchivo(clave) {
+    if (!disponible) return null;
+    const respuesta = await caches.match(url(clave), { cacheName: NOMBRE });
+    return respuesta ? respuesta.blob() : null;
+  }
+
   async function borrar() {
     if (!disponible) return false;
     return caches.delete(NOMBRE);
@@ -78,5 +95,5 @@ App.cacheApi = (() => {
     return { lista, usado, cuota };
   }
 
-  return { NOMBRE, disponible, guardar, leer, borrar, resumen };
+  return { NOMBRE, disponible, guardar, leer, guardarArchivo, leerArchivo, borrar, resumen };
 })();

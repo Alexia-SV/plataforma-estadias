@@ -4,17 +4,23 @@
    Vistas: #alumnos · #revisar · #alumno/<id> · #perfil
    El asesor ve todas las versiones de la tesina de sus alumnos asignados,
    las descarga y deja observaciones (y puede cambiar el estado).
-   Depende de toast.js, cache-api.js, auth.js, tesina.js y panel.js.
+   Además: compara una versión con la anterior (comparar.js), deja notas en
+   el lugar exacto del documento (visor.js) y graba notas de voz (voz.js).
+   Depende de toast.js, cache-api.js, auth.js, tesina.js, panel.js,
+   documento.js, prerevision.js, comparar.js, visor.js y voz.js.
    ========================================================================== */
 (async () => {
   'use strict';
 
-  const { auth, tesina, panel, toast, cacheApi, ui } = window.App;
+  const { auth, tesina, panel, toast, cacheApi, ui, voz, comparar, visor } = window.App;
   const $ = (id) => document.getElementById(id);
 
   if (!(await panel.exigirSesion('asesor'))) return;
 
   const estado = { perfil: null, alumnos: [], origen: 'cache', guardadoEn: null, vista: 'alumnos', param: '' };
+  const miId = await auth.usuarioId();
+  const grabadoras = new Map(); // id de versión → grabadora (sobrevive a cada repintado)
+  const todasLasVersiones = () => estado.alumnos.flatMap((a) => a.versiones);
 
   const ultima = (alumno) => alumno.versiones[0];
   const porRevisar = () => estado.alumnos.flatMap((a) => a.versiones
@@ -83,9 +89,26 @@
     $('t-alumno').textContent = alumno.nombre;
     $('alumno-sub').textContent = `Matrícula ${alumno.matricula} · ${alumno.nivel} · ${alumno.correo}`;
     document.title = `${alumno.nombre} · Revisión de tesinas · SIGEP UTP`;
-    ui.pintar($('alumno-versiones'), alumno.versiones.length
-      ? alumno.versiones.map((v, i) => ui.version(v, { actual: i === 0, formulario: true })).join('')
+
+    // Lo que el asesor ya escribió no se pierde al volver a dibujar
+    const lista = $('alumno-versiones');
+    const borradores = new Map([...lista.querySelectorAll('[data-observar]')].map((f) => [f.dataset.observar, {
+      texto: f.elements.texto.value, estado: f.elements.estado.value,
+    }]));
+    ui.pintar(lista, alumno.versiones.length
+      ? alumno.versiones.map((v, i) => ui.version(v, {
+        actual: i === 0, formulario: true, anterior: i < alumno.versiones.length - 1,
+      })).join('')
       : '<li class="empty">Este alumno todavía no ha subido ninguna versión de su tesina.</li>');
+    lista.querySelectorAll('[data-observar]').forEach((f) => {
+      const previo = borradores.get(f.dataset.observar);
+      if (previo) { f.elements.texto.value = previo.texto; f.elements.estado.value = previo.estado; }
+      const caja = f.querySelector('[data-grabadora]');
+      if (!caja) return;
+      if (!grabadoras.has(f.dataset.observar)) grabadoras.set(f.dataset.observar, voz.grabadora());
+      grabadoras.get(f.dataset.observar).montar(caja);
+    });
+    voz.preparar(lista);
   }
 
   function pintarPerfil() {
@@ -155,18 +178,26 @@
     e.preventDefault();
 
     const texto = form.elements.texto.value.trim();
+    const grabadora = grabadoras.get(form.dataset.observar);
+    const audio = grabadora?.audio() || null;
     const error = form.querySelector('.field-error');
-    error.textContent = texto ? '' : 'Escribe la observación para el alumno.';
-    form.elements.texto.setAttribute('aria-invalid', String(!texto));
-    if (!texto) { form.elements.texto.focus(); return; }
+    if (grabadora?.grabando()) { error.textContent = 'Detén la grabación antes de guardar.'; return; }
+    const falta = !texto && !audio;
+    error.textContent = falta ? (grabadora ? 'Escribe la observación o graba una nota de voz.' : 'Escribe la observación para el alumno.') : '';
+    form.elements.texto.setAttribute('aria-invalid', String(falta));
+    if (falta) { form.elements.texto.focus(); return; }
 
+    const version = todasLasVersiones().find((v) => v.id === form.dataset.observar);
     const boton = form.querySelector('button[type="submit"]');
     const original = boton.innerHTML;
     boton.disabled = true;
-    boton.innerHTML = '<span class="cargando" aria-hidden="true"></span>Guardando…';
+    boton.innerHTML = `<span class="cargando" aria-hidden="true"></span>${audio ? 'Subiendo nota de voz…' : 'Guardando…'}`;
     try {
-      await tesina.observar(form.dataset.observar, texto, form.elements.estado.value);
-      toast.show('Observación guardada. El alumno ya puede verla en su portal.');
+      await tesina.observar(version, { texto, estado: form.elements.estado.value, audio });
+      form.reset();
+      grabadora?.limpiar();
+      toast.show(audio ? 'Observación con nota de voz guardada. El alumno podrá escucharla aun sin conexión.'
+        : 'Observación guardada. El alumno ya puede verla en su portal.');
       await actualizar();
       document.getElementById(`version-${form.dataset.observar}`)?.scrollIntoView({ block: 'center' });
     } catch (err) {
@@ -176,10 +207,43 @@
     }
   });
 
+  // Comparar con la versión anterior y anotar sobre el documento
+  document.addEventListener('click', (e) => {
+    const botonComparar = e.target.closest('[data-comparar]');
+    const botonVisor = e.target.closest('[data-visor]');
+    if (!botonComparar && !botonVisor) return;
+    const id = (botonComparar || botonVisor).dataset.comparar || botonVisor?.dataset.visor;
+    const alumno = estado.alumnos.find((a) => a.versiones.some((v) => v.id === id));
+    const version = alumno?.versiones.find((v) => v.id === id);
+    if (!version) return;
+
+    if (botonComparar) { comparar.abrir(alumno.versiones, { b: version.id }); return; }
+    // Los datos pueden recargarse mientras el visor está abierto: se busca la versión vigente
+    const cambiarNotas = (cambio) => {
+      const vigente = todasLasVersiones().find((v) => v.id === id);
+      if (vigente) vigente.notas = cambio(vigente.notas || []);
+      pintarDetalle();
+    };
+    visor.abrir(version, {
+      notas: version.notas,
+      puedeAnotar: true,
+      miId,
+      guardar: async (datos) => {
+        const nueva = await tesina.anotar(version, datos);
+        cambiarNotas((notas) => [...notas, nueva]);
+        return nueva;
+      },
+      borrar: async (nota) => {
+        await tesina.borrarNota(nota);
+        cambiarNotas((notas) => notas.filter((n) => n.id !== nota.id));
+      },
+    });
+  });
+
   document.addEventListener('click', async (e) => {
     const boton = e.target.closest('[data-descargar]');
     if (!boton) return;
-    const version = estado.alumnos.flatMap((a) => a.versiones).find((v) => v.id === boton.dataset.descargar);
+    const version = todasLasVersiones().find((v) => v.id === boton.dataset.descargar);
     if (!version) return;
     boton.disabled = true;
     try {

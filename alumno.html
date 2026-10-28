@@ -28,9 +28,15 @@
   <script src="js/config.js" defer></script>
   <script src="js/toast.js" defer></script>
   <script src="js/cache-api.js" defer></script>
+  <script src="js/cola.js" defer></script>
   <script src="js/auth.js" defer></script>
   <script src="js/tesina.js" defer></script>
   <script src="js/panel.js" defer></script>
+  <script src="js/documento.js" defer></script>
+  <script src="js/prerevision.js" defer></script>
+  <script src="js/comparar.js" defer></script>
+  <script src="js/visor.js" defer></script>
+  <script src="js/voz.js" defer></script>
   <script src="js/alumno.js" defer></script>
   <script src="js/pwa.js" defer></script>
 </head>
@@ -100,7 +106,7 @@
 
         <div class="card" style="margin-bottom:16px">
           <div class="card-h"><h2>Subir una nueva versión</h2><span class="mono">PDF o Word · máximo 10 MB</span></div>
-          <p class="help warn" id="aviso-subir" hidden><i data-ic="alert"></i><span>Necesitas conexión a internet para subir una versión.</span></p>
+          <p class="help warn" id="aviso-subir" hidden><i data-ic="alert"></i><span>Estás sin conexión. Puedes subir tu versión de todos modos: se guardará en este dispositivo y se enviará sola a tu asesor cuando vuelva internet, aunque cierres la app.</span></p>
           <form class="form" id="form-subir" novalidate>
             <div class="zona-archivo" id="zona-archivo">
               <input type="file" id="archivo" name="archivo" aria-describedby="archivo-ayuda archivo-error">
@@ -115,6 +121,9 @@
             </div>
             <p class="field-error" id="archivo-error" role="alert"></p>
 
+            <!-- Pre-revisión automática del formato (js/prerevision.js) -->
+            <div class="prerevision" id="prerevision" aria-live="polite" hidden></div>
+
             <label class="field">Comentario para tu asesor (opcional)
               <textarea name="comentario" id="comentario" maxlength="500" placeholder="Por ejemplo: «Corregí el capítulo 2 y agregué la bibliografía»."></textarea>
               <span class="contador" id="comentario-contador">0 / 500</span>
@@ -123,6 +132,13 @@
             <p class="help bad" id="subir-error" role="alert" hidden></p>
             <div><button class="btn" type="submit" id="btn-subir"><i data-ic="upload"></i>Subir versión</button></div>
           </form>
+        </div>
+
+        <!-- Entregas guardadas sin conexión (js/cola.js) -->
+        <div class="card pendientes" id="card-pendientes" style="margin-bottom:16px" hidden>
+          <div class="card-h"><h2>Pendientes de envío</h2><span class="chip warn">En este dispositivo</span></div>
+          <p class="small muted" style="margin-bottom:6px">Se envían solas cuando hay conexión, incluso con la app cerrada.</p>
+          <div class="rows" id="lista-pendientes"></div>
         </div>
 
         <div class="card">

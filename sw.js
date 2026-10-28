@@ -14,12 +14,20 @@
    · Respuestas de la API (Supabase): las guarda la página en "estadias-api"
      (js/cache-api.js); aquí solo se protege esa caché para no borrarla.
 
+   Envío en segundo plano (Background Sync)
+   · Si el alumno sube su tesina sin conexión, la página la guarda en
+     IndexedDB (js/cola.js) y registra la etiqueta "enviar-tesina". Cuando
+     vuelve la red, el navegador despierta a este service worker, aunque la
+     app esté cerrada, y él envía la entrega y avisa con una notificación.
+
    Al agregar, quitar o renombrar archivos, actualiza PRECACHE y sube
    VERSION: el navegador instalará el service worker nuevo y borrará la
    caché anterior.
    ========================================================================== */
 
-const VERSION = 'v5';
+importScripts('js/cola.js'); // define ColaTesina
+
+const VERSION = 'v6';
 const STATIC_CACHE = `estadias-${VERSION}`;
 const FONT_CACHE = 'estadias-fuentes';
 const API_CACHE = 'estadias-api'; // la llena js/cache-api.js
@@ -45,13 +53,21 @@ const PRECACHE = [
   'js/pwa.js',
   'js/config.js',
   'js/cache-api.js',
+  'js/cola.js',
   'js/auth.js',
   'js/tesina.js',
   'js/panel.js',
+  'js/documento.js',
+  'js/prerevision.js',
+  'js/comparar.js',
+  'js/visor.js',
+  'js/voz.js',
   'js/portal.js',
   'js/alumno.js',
   'js/asesor.js',
   'js/vendor/supabase.js',
+  'js/vendor/pdfjs/pdf.min.mjs',
+  'js/vendor/pdfjs/pdf.worker.min.mjs',
   'icons/icon.svg',
   'icons/favicon-32.png',
   'icons/icon-192.png',
@@ -127,6 +143,50 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(networkFirst(event));
+});
+
+/* ==========================================================================
+   Envío en segundo plano de la tesina (Background Sync)
+   ========================================================================== */
+
+self.addEventListener('sync', (event) => {
+  if (event.tag === ColaTesina.ETIQUETA) event.waitUntil(enviarCola());
+});
+
+async function enviarCola() {
+  const { enviadas, motivo } = await ColaTesina.enviarPendientes();
+  // Si la red volvió a fallar, el error hace que el navegador lo reintente después
+  if (motivo === 'red') throw new Error('Sin conexión: se reintentará.');
+  if (!enviadas.length) return;
+
+  const ventanas = await self.clients.matchAll({ type: 'window' });
+  ventanas.forEach((v) => v.postMessage({ tipo: 'cola-enviada', enviadas }));
+
+  if (self.Notification?.permission === 'granted') {
+    await Promise.all(enviadas.map((v) => self.registration.showNotification('Tu tesina se envió', {
+      body: `«${v.nombre}» quedó registrada como la versión ${v.numero}. Tu asesor ya puede revisarla.`,
+      icon: 'icons/icon-192.png',
+      badge: 'icons/icon-maskable-192.png',
+      tag: `tesina-${v.id}`,
+      lang: 'es-MX',
+      data: { url: 'alumno.html#tesina' },
+    })));
+  }
+}
+
+// Al tocar la notificación se abre (o se enfoca) «Mi tesina»
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const destino = new URL(event.notification.data?.url || './', self.registration.scope).href;
+  event.waitUntil((async () => {
+    const ventanas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const abierta = ventanas.find((v) => v.url.split('#')[0] === destino.split('#')[0]);
+    if (abierta) {
+      await abierta.focus();
+      return abierta.navigate(destino);
+    }
+    return self.clients.openWindow(destino);
+  })());
 });
 
 /* ==========================================================================

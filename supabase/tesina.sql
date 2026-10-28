@@ -7,13 +7,16 @@
 --
 -- Contenido
 --   1. Tablas: asesores, asignaciones_asesor, tesina_versiones,
---      tesina_observaciones
+--      tesina_observaciones, tesina_notas
 --   2. Funciones de apoyo para las reglas de seguridad
 --   3. Reglas de seguridad (RLS) y permisos
 --   4. Numeración automática de versiones
---   5. Observaciones del asesor (función observar_version)
---   6. Almacenamiento de archivos (bucket "tesinas")
+--   5. Observaciones del asesor (función observar_version, con nota de voz)
+--   6. Almacenamiento de archivos (buckets "tesinas" y "voz")
 --   7. Administración: hacer_asesor() y asignar_asesor()
+--
+-- Si tu base ya tenía una versión anterior de este archivo, vuelve a
+-- ejecutarlo completo: agrega las columnas y tablas nuevas sin borrar datos.
 -- ==========================================================================
 
 -- --------------------------------------------------------------------------
@@ -65,8 +68,42 @@ create table if not exists public.tesina_observaciones (
 
 create index if not exists tesina_observaciones_version_idx on public.tesina_observaciones (version_id);
 
+-- Columnas agregadas después (se crean también en bases que ya existían)
+-- · prerevision: resultado de la pre-revisión del formato que hizo la app
+--   antes de subir el archivo (informativo para el asesor)
+-- · audio_path / audio_segundos: nota de voz de la observación (bucket "voz")
+alter table public.tesina_versiones add column if not exists prerevision jsonb;
+alter table public.tesina_versiones drop constraint if exists tesina_versiones_prerevision_check;
+alter table public.tesina_versiones add constraint tesina_versiones_prerevision_check
+  check (prerevision is null or (jsonb_typeof(prerevision) = 'object' and pg_column_size(prerevision) <= 16384));
+
+alter table public.tesina_observaciones add column if not exists audio_path text unique;
+alter table public.tesina_observaciones add column if not exists audio_segundos integer
+  check (audio_segundos is null or audio_segundos between 1 and 600);
+
+-- Notas que el asesor deja sobre un punto exacto del documento:
+-- en un PDF, la página y la posición (x, y de 0 a 1); en Word, el párrafo.
+create table if not exists public.tesina_notas (
+  id          uuid primary key default gen_random_uuid(),
+  version_id  uuid not null references public.tesina_versiones (id) on delete cascade,
+  asesor_id   uuid not null references public.asesores (id) on delete cascade,
+  pagina      integer check (pagina is null or pagina > 0),
+  x           real check (x is null or x between 0 and 1),
+  y           real check (y is null or y between 0 and 1),
+  parrafo     integer check (parrafo is null or parrafo >= 0),
+  extracto    text check (extracto is null or char_length(extracto) <= 200),
+  texto       text not null check (char_length(trim(texto)) between 1 and 1000),
+  creado_en   timestamptz not null default now(),
+  constraint tesina_notas_lugar_check check (
+    (pagina is not null and x is not null and y is not null and parrafo is null)
+    or (parrafo is not null and pagina is null and x is null and y is null))
+);
+
+create index if not exists tesina_notas_version_idx on public.tesina_notas (version_id);
+
 comment on table public.tesina_versiones is 'Historial de versiones de la tesina de cada alumno (no se modifican ni se borran).';
 comment on table public.tesina_observaciones is 'Observaciones del asesor sobre cada versión de la tesina.';
+comment on table public.tesina_notas is 'Notas del asesor ancladas a una página o párrafo de una versión.';
 
 -- --------------------------------------------------------------------------
 -- 2. Funciones de apoyo (se usan dentro de las reglas de seguridad)
@@ -112,6 +149,7 @@ alter table public.asesores enable row level security;
 alter table public.asignaciones_asesor enable row level security;
 alter table public.tesina_versiones enable row level security;
 alter table public.tesina_observaciones enable row level security;
+alter table public.tesina_notas enable row level security;
 
 -- Asesores: cada asesor ve su registro y el alumno ve a su asesor asignado
 drop policy if exists "consultar asesor" on public.asesores;
@@ -160,10 +198,41 @@ create policy "consultar observaciones"
       and (v.alumno_id = (select auth.uid()) or public.es_asesor_de(v.alumno_id::text))
   ));
 
+-- Notas ancladas: las ven el alumno dueño y su asesor; solo el asesor
+-- asignado las agrega y cada asesor borra únicamente las suyas.
+drop policy if exists "consultar notas" on public.tesina_notas;
+create policy "consultar notas"
+  on public.tesina_notas for select
+  to authenticated
+  using (exists (
+    select 1 from public.tesina_versiones v
+    where v.id = version_id
+      and (v.alumno_id = (select auth.uid()) or public.es_asesor_de(v.alumno_id::text))
+  ));
+
+drop policy if exists "asesor agrega nota" on public.tesina_notas;
+create policy "asesor agrega nota"
+  on public.tesina_notas for insert
+  to authenticated
+  with check (
+    asesor_id = (select auth.uid())
+    and exists (
+      select 1 from public.tesina_versiones v
+      where v.id = version_id and public.es_asesor_de(v.alumno_id::text)
+    )
+  );
+
+drop policy if exists "asesor borra su nota" on public.tesina_notas;
+create policy "asesor borra su nota"
+  on public.tesina_notas for delete
+  to authenticated
+  using (asesor_id = (select auth.uid()));
+
 revoke all on public.asesores, public.asignaciones_asesor,
-              public.tesina_versiones, public.tesina_observaciones from anon;
+              public.tesina_versiones, public.tesina_observaciones, public.tesina_notas from anon;
 grant select on public.asesores, public.asignaciones_asesor, public.tesina_observaciones to authenticated;
 grant select, insert on public.tesina_versiones to authenticated;
+grant select, insert, delete on public.tesina_notas to authenticated;
 
 -- --------------------------------------------------------------------------
 -- 4. Numeración automática de versiones
@@ -219,12 +288,18 @@ create trigger antes_de_agregar_version
 
 -- --------------------------------------------------------------------------
 -- 5. Observaciones del asesor
---    Guarda la observación y, si se indica, cambia el estado de la versión.
+--    Guarda la observación (texto, nota de voz o ambos) y, si se indica,
+--    cambia el estado de la versión.
 -- --------------------------------------------------------------------------
+-- La versión anterior no tenía nota de voz; se quita para que no haya dos
+drop function if exists public.observar_version(uuid, text, text);
+
 create or replace function public.observar_version(
-  p_version uuid,
-  p_texto   text,
-  p_estado  text default null
+  p_version        uuid,
+  p_texto          text default null,
+  p_estado         text default null,
+  p_audio_path     text default null,
+  p_audio_segundos integer default null
 )
 returns public.tesina_observaciones
 language plpgsql
@@ -233,6 +308,7 @@ set search_path = ''
 as $$
 declare
   v_alumno uuid;
+  v_texto  text := nullif(trim(coalesce(p_texto, '')), '');
   v_obs    public.tesina_observaciones;
 begin
   select v.alumno_id into v_alumno from public.tesina_versiones v where v.id = p_version;
@@ -248,8 +324,25 @@ begin
     raise exception 'Estado no válido.' using errcode = '22023';
   end if;
 
-  insert into public.tesina_observaciones (version_id, asesor_id, texto, estado_asignado)
-  values (p_version, auth.uid(), trim(p_texto), p_estado)
+  if v_texto is null and p_audio_path is null then
+    raise exception 'Escribe la observación o graba una nota de voz.' using errcode = '22023';
+  end if;
+
+  -- La nota de voz debe estar ya en la carpeta del alumno dentro del bucket "voz"
+  if p_audio_path is not null then
+    if split_part(p_audio_path, '/', 1) <> v_alumno::text then
+      raise exception 'El archivo de la nota de voz no corresponde a este alumno.' using errcode = '42501';
+    end if;
+    if not exists (select 1 from storage.objects o where o.bucket_id = 'voz' and o.name = p_audio_path) then
+      raise exception 'No se encontró la nota de voz.' using errcode = 'P0002';
+    end if;
+  end if;
+
+  insert into public.tesina_observaciones (version_id, asesor_id, texto, estado_asignado, audio_path, audio_segundos)
+  values (
+    p_version, auth.uid(), coalesce(v_texto, 'Nota de voz'), p_estado, p_audio_path,
+    case when p_audio_path is null then null else greatest(1, least(600, coalesce(p_audio_segundos, 1))) end
+  )
   returning * into v_obs;
 
   if p_estado is not null then
@@ -260,11 +353,11 @@ begin
 end;
 $$;
 
-revoke all on function public.observar_version(uuid, text, text) from public, anon;
-grant execute on function public.observar_version(uuid, text, text) to authenticated;
+revoke all on function public.observar_version(uuid, text, text, text, integer) from public, anon;
+grant execute on function public.observar_version(uuid, text, text, text, integer) to authenticated;
 
 -- --------------------------------------------------------------------------
--- 6. Almacenamiento de archivos: bucket privado "tesinas"
+-- 6. Almacenamiento de archivos: buckets privados "tesinas" y "voz"
 --    Solo PDF y Word, máximo 10 MB. Ruta: <id del alumno>/<archivo>
 -- --------------------------------------------------------------------------
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -315,6 +408,51 @@ create policy "alumno borra archivo sin version"
     bucket_id = 'tesinas'
     and (storage.foldername(name))[1] = (select auth.uid())::text
     and not exists (select 1 from public.tesina_versiones v where v.archivo_path = objects.name)
+  );
+
+-- Notas de voz del asesor: bucket privado "voz", máximo 5 MB.
+-- Ruta: <id del alumno>/<archivo>. Las graba el asesor asignado y las
+-- escuchan él y el alumno.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'voz', 'voz', false, 5242880,
+  array['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/mpeg', 'audio/wav']
+)
+on conflict (id) do update
+  set public = false,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "asesor sube nota de voz" on storage.objects;
+create policy "asesor sube nota de voz"
+  on storage.objects for insert
+  to authenticated
+  with check (
+    bucket_id = 'voz'
+    and public.es_asesor_de((storage.foldername(name))[1])
+  );
+
+drop policy if exists "escuchar nota de voz" on storage.objects;
+create policy "escuchar nota de voz"
+  on storage.objects for select
+  to authenticated
+  using (
+    bucket_id = 'voz'
+    and (
+      (storage.foldername(name))[1] = (select auth.uid())::text
+      or public.es_asesor_de((storage.foldername(name))[1])
+    )
+  );
+
+-- Si falla el registro de la observación, el asesor borra el audio sin usar
+drop policy if exists "asesor borra nota de voz sin observacion" on storage.objects;
+create policy "asesor borra nota de voz sin observacion"
+  on storage.objects for delete
+  to authenticated
+  using (
+    bucket_id = 'voz'
+    and public.es_asesor_de((storage.foldername(name))[1])
+    and not exists (select 1 from public.tesina_observaciones o where o.audio_path = objects.name)
   );
 
 -- --------------------------------------------------------------------------

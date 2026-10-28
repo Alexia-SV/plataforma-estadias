@@ -43,13 +43,21 @@ plataforma-estadias/
 │   ├── pwa.js              Registro del service worker, botón «Instalar app», conexión
 │   ├── config.js           Datos de conexión con Supabase (URL y clave publicable)
 │   ├── cache-api.js        Caché de las respuestas de la API (Cache Storage)
+│   ├── cola.js             Entregas sin conexión (IndexedDB); la usan la página y sw.js
 │   ├── auth.js             Cuentas, sesión y rol (alumno o asesor)
-│   ├── tesina.js           Subida de versiones, historial, descargas y observaciones
-│   ├── panel.js            Menú, vistas y dibujo común de alumno.html y asesor.html
+│   ├── tesina.js           Subida de versiones, historial, descargas, observaciones y notas
+│   ├── panel.js            Menú, vistas, ventanas y dibujo común de alumno.html y asesor.html
+│   ├── documento.js        Lectura de los archivos de la tesina (PDF y .docx)
+│   ├── prerevision.js      Pre-revisión automática del formato
+│   ├── comparar.js         Comparador de versiones
+│   ├── visor.js            Visor del documento con notas ancladas
+│   ├── voz.js              Notas de voz del asesor (grabar y escuchar)
 │   ├── portal.js           Pestañas y validación de inicio de sesión y registro
 │   ├── alumno.js           Panel del alumno
 │   ├── asesor.js           Panel del asesor
-│   └── vendor/supabase.js  Librería oficial de Supabase (v2, licencia MIT)
+│   └── vendor/
+│       ├── supabase.js     Librería oficial de Supabase (v2, licencia MIT)
+│       └── pdfjs/          PDF.js de Mozilla (4.10.38, licencia Apache 2.0)
 ├── supabase/
 │   ├── esquema.sql         Tabla alumnos, seguridad (RLS) y registro automático
 │   └── tesina.sql          Asesores, asignaciones, versiones, observaciones y archivos
@@ -113,12 +121,31 @@ Lo que garantiza la base de datos (`supabase/tesina.sql`):
   descargan con enlaces temporales de 2 minutos.
 - Cada alumno solo ve lo suyo; cada asesor, solo a sus alumnos asignados.
 
+### Herramientas de revisión
+
+| Herramienta | Quién la usa | Cómo funciona |
+| --- | --- | --- |
+| **Entrega sin conexión** | Alumno | Sin internet, el botón cambia a *Guardar y enviar al volver la conexión*. El archivo se guarda en IndexedDB (`js/cola.js`) y aparece en **Pendientes de envío**. Al volver la red se envía solo: desde la página, o desde el service worker con **Background Sync** aunque la app esté cerrada, y avisa con una notificación. |
+| **Comparador de versiones** | Ambos | Botón **Comparar**: lee el texto de dos versiones (PDF o .docx) y marca en verde lo agregado y en rojo lo quitado, con la página donde está cada cambio. |
+| **Notas ancladas** | Asesor anota, alumno las ve | Botón **Anotar** / **Notas**: abre el documento dentro de la app. En un PDF, el asesor toca el punto exacto de la página; en Word, el párrafo. El alumno ve cada nota numerada en su lugar. |
+| **Pre-revisión del formato** | Alumno (el asesor ve el resultado) | Al elegir el archivo, la app revisa en el navegador: hoja carta, márgenes de 2.5 cm, números de página, portada con la universidad y el nombre, índice, introducción y conclusiones, referencias y que cada cita APA tenga su referencia. Las reglas están en `REGLAS` de `js/prerevision.js`, para ajustarlas a la guía oficial. |
+| **Notas de voz** | Asesor graba, alumno escucha | En la observación, **Grabar nota de voz** (máximo 3 minutos). El audio va al bucket privado `voz`; el alumno lo escucha y queda guardado para oírlo sin conexión. |
+
+Sin conexión funcionan el comparador, el visor y las notas de voz de los archivos que ya
+se abrieron una vez (el panel del alumno guarda por adelantado las dos últimas versiones y
+las que tienen notas). Los archivos `.doc` antiguos no se pueden leer en la app: solo
+descargar.
+
 ### Instalar o actualizar la base de datos
 
 En **SQL Editor**, ejecuta en este orden (los dos se pueden volver a ejecutar):
 
 1. `supabase/esquema.sql`
 2. `supabase/tesina.sql`
+
+Si la base ya existía, **vuelve a ejecutar `supabase/tesina.sql` completo** para agregar
+las notas ancladas, las notas de voz (bucket `voz`) y la pre-revisión. Mientras no se
+ejecute, el portal sigue funcionando, pero sin esas herramientas.
 
 ### Dar de alta a un asesor y asignarle alumnos
 
@@ -157,7 +184,7 @@ referencias) guardados en `supabase/datos-prueba/`, con datos ficticios.
 
 Todas usan la contraseña **Prueba2026**. Se pueden volver a ejecutar sin duplicar nada.
 Para quitarlas, ejecuta `supabase/borrar-datos-prueba.sql` y borra en **Storage → tesinas**
-las carpetas que lista.
+y **Storage → voz** las carpetas que lista.
 
 ## Contraseñas
 
@@ -181,9 +208,9 @@ El sitio usa tres cachés de Cache Storage:
 
 | Caché | Quién la llena | Contenido | Estrategia |
 | --- | --- | --- | --- |
-| `estadias-v5` | `sw.js` | Páginas, CSS, JS, íconos, imágenes y video | Precarga + primero la red (el video, primero la caché) |
+| `estadias-v6` | `sw.js` | Páginas, CSS, JS (incluido PDF.js), íconos, imágenes y video | Precarga + primero la red (el video, primero la caché) |
 | `estadias-fuentes` | `sw.js` | Tipografías de Google Fonts | Primero la caché |
-| `estadias-api` | `js/cache-api.js` | Respuestas de la API: perfil, rol, versiones de la tesina, asesor y alumnos del asesor | Stale-while-revalidate |
+| `estadias-api` | `js/cache-api.js` | Respuestas de la API (perfil, rol, versiones, asesor y alumnos del asesor), archivos de la tesina ya abiertos y notas de voz | Stale-while-revalidate |
 
 - Al abrir el portal, los datos del alumno se muestran al instante desde `estadias-api`
   y en paralelo se piden a Supabase; al llegar, se actualizan la pantalla y la caché.
@@ -192,8 +219,11 @@ El sitio usa tres cachés de Cache Storage:
 - Solo se guardan consultas: nunca contraseñas, tokens ni el registro o inicio de sesión.
 - En **Mi perfil**, el panel **Datos guardados en este dispositivo** muestra las cachés,
   cuántos archivos tiene cada una y el espacio usado, con botones para actualizar o borrar.
-- Los archivos de la tesina **no** se guardan en la caché: siempre se descargan del
-  servidor con un enlace temporal. Subir una versión requiere conexión.
+- Los archivos de la tesina que se abren en el comparador o el visor, y las notas de voz,
+  se guardan en `estadias-api` para usarlos sin conexión. El botón **Descargar** siempre
+  usa un enlace temporal del servidor.
+- Las entregas hechas sin conexión esperan en IndexedDB (`estadias-cola`), no en la caché.
+  Al cerrar sesión se borran también; si hay alguna pendiente, el portal lo advierte antes.
 
 ## Requisitos cubiertos
 
@@ -223,6 +253,9 @@ El sitio usa tres cachés de Cache Storage:
   se actualiza la copia guardada.
 - **Avisos**: se informa cuando el sitio quedó listo sin conexión, cuando se instala
   la app y cuando se pierde o recupera la conexión.
+- **Envío en segundo plano (Background Sync)**: una tesina subida sin conexión se envía
+  cuando vuelve la red aunque la app esté cerrada; el service worker avisa con una
+  notificación del sistema (si el alumno dio permiso).
 
 Para probarlo: DevTools → *Application* → *Service workers* / *Manifest*; en
 *Network* se puede marcar *Offline* y recargar.
